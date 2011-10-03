@@ -29,14 +29,20 @@ Usage
 
 Examples are always most helpful to get you started.
 
+  ffcast
+
+Start fullscreen capture.  In this simplest form, where no region-selecting
+argument is passed, FFcast selects the root window and passes its geometry to
+FFmpeg.
+
   ffcast -s
 
-You will be asked to select a region using mouse, then ffmpeg starts recording.
+You will be asked to select a region using mouse, then FFmpeg starts recording.
 Press 'q' to end recording.  The output file by default is ffcast-*.mkv.
 
   ffcast -vvs ffmpeg -r 25 -- -f alsa -i hw:0 -vcodec libx264 cast.mkv
 
-Debug is turned on by -vv.  You will see in the debug output the ffmpeg command
+Debug is turned on by -vv.  You will see in the debug output the FFmpeg command
 line that's called.  Notice that '--' from above is replaced with the x11grab
 input options, and other options are unchanged- That's indeed what FFcast does.
 
@@ -82,7 +88,7 @@ History
 Originally, Michal Witkowski (Neuro) posted[1] "x264 Lossless Screencast Script"
 at ArchLinux forums.  I then went on and heavily modified and extended the
 script, and finally released FFcast 0.x.  The idea behind Neuro's script was to
-parse xwininfo's output and pass it to ffmpeg, so you can easily record a window
+parse xwininfo's output and pass it to FFmpeg, so you can easily record a window
 by simply clicking it.  I liked it, and naturally linked the behavior with the
 screenshot application 'scrot'.  I wanted to find a way to select an arbitrary
 screen region for capture.  I went on to look at the scrot source code, as well
@@ -90,7 +96,7 @@ as post a topic[2] asking for help.  HashBox was very kind to post his code and
 even clean it up for me- I finally combined what I got from scrot and HashBox's
 code and put togethor xrectsel.c.  All was looking good to me.
 
-But obviously I was midguided to think it's a good idea to take control of all
+But obviously I was misguided to think it's a good idea to take control of all
 the irrelevant FFmpeg options and added even more (like -t).  And then people
 came to me and complained that FFcast doesn't do sound recording.  I at first
 still thought I should implement it, but then found that we simply couldn't-
@@ -100,28 +106,30 @@ file and whatnot, but I *knew* I was on the wrong track, so I did nothing.
 
 After a long time, a thread[3] at ArchLinux forums reminded me of FFcast and
 the painful fact that it sucked.  I then sat down, opened the script, and didn't
-read much before I started to write prototype code for FFcast 1.0.
+read much before I started to write prototype code for FFcast 1.0.  The next day,
+FFcast2 (i.e., FFcast 1.0) was announced[4] at ArchLinux forums.
 
 [1] https://bbs.archlinux.org/viewtopic.php?id=85237
 [2] https://bbs.archlinux.org/viewtopic.php?id=85378
 [3] https://bbs.archlinux.org/viewtopic.php?id=127335
+[4] https://bbs.archlinux.org/viewtopic.php?id=127570
 
 FAQ
 ---
 
 Q: Why not support console recording?
-A: Since you asked, you probably know that ffmpeg can record framebuffer,
-   `ffmpeg -f fbdev -i /dev/fb0` for example.  The thing is ffmpeg's framebuffer
+A: Since you asked, you probably know that FFmpeg can record framebuffer,
+   `ffmpeg -f fbdev -i /dev/fb0` for example.  The thing is FFmpeg's framebuffer
    recording is very primitive- it does not support region selection of any
    kind, just the whole screen.  Even if it did, we wouldn't be able to do the
    same kind of interative selection as in X.  Due to these limitations and
-   the goal of FFcast, the user is better off using ffmpeg directly.
+   the goal of FFcast, the user is better off using FFmpeg directly.
    I also recommend 'ttyrec' for your tty recording needs.
 
 Q: Can I record audio using FFcast?
-A: Yes, you can do everything you like with ffmpeg since FFcast 1.0.
+A: Yes, you can do everything you like with FFmpeg since FFcast 1.0.
 
 Q: Why is the video quality so poor?
 A: That's none of my business- you're the one responsible to pass the right
-   flags to ffmpeg, not FFcast.  That said, if you think the default FFmpeg
-   flags are stupid and sucks, feel free to suggest a decent combination.
+   flags to FFmpeg, not FFcast.  That said, if you think the default FFmpeg
+   flags are stupid and suck, feel free to suggest a decent combination.
