@@ -125,8 +125,8 @@ static int select_region(Display *dpy, Window root, Region *region)
   XGCValues sel_gv;
 
   int done = 0, btn_pressed = 0;
-  int x, y, width, height;
-  int start_x, start_y;
+  int x = 0, y = 0, width = 0, height = 0;
+  int start_x = 0, start_y = 0;
 
   Cursor cursor;
   cursor = XCreateFontCursor(dpy, XC_crosshair);

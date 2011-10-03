@@ -9,7 +9,7 @@ PREFIX    ?= /usr
 MANPREFIX ?= ${PREFIX}/share/man
 
 CPPFLAGS  := -DVERSION=\"${VERSION}\" ${CPPFLAGS}
-CFLAGS    := --std=c99 -g -pedantic -Wall -Wextra -Werror ${CFLAGS}
+CFLAGS    := --std=c99 -g -pedantic -Wall -Wextra ${CFLAGS}
 LDFLAGS   := -lX11 ${LDFLAGS}
 
 all: ${OUT}
