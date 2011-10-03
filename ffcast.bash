@@ -18,34 +18,34 @@ readonly x
 
 _msg() {
     local prefix=$1
-    shift || return
+    shift || return 0
     local fmt=$1
-    shift || return
+    shift || return 0
     printf "$prefix$fmt\n" "$@"
 }
 
 debug() {
-    (( verbosity >= 2 )) || return
+    (( verbosity >= 2 )) || return 0
     _msg 'debug: ' "$@"
 } >&2
 
 verbose() {
-    (( verbosity >= 1 )) || return
+    (( verbosity >= 1 )) || return 0
     _msg 'verbose: ' "$@"
 } >&2
 
 msg() {
-    (( verbosity >= 0 )) || return
+    (( verbosity >= 0 )) || return 0
     _msg ':: ' "$@"
 } >&2
 
 warn() {
-    (( verbosity >= -1 )) || return
+    (( verbosity >= -1 )) || return 0
     _msg 'warning: ' "$@"
 } >&2
 
 error() {
-    (( verbosity >= -1 )) || return
+    (( verbosity >= -1 )) || return 0
     _msg 'error: ' "$@"
 } >&2
 
@@ -306,6 +306,7 @@ fi
 
 (( w = rootw - _x - x_ ))
 (( h = rooth - _y - y_ ))
+
 # x264 requires frame size divisible by 2, mod 16 is said to be optimal.
 # Adapt by reducing- expanding could exceed screen edges, and would not
 # be much beneficial anyway.
