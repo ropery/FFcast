@@ -1,0 +1,105 @@
+FFcast
+======
+
+FFcast helps the user interactively select a screen region and hands over the
+geometry to FFmpeg for screen recording.
+
+FFcast version 1.0 rewritten from scratch, and incompatible with version 0.x.
+
+Usage
+-----
+
+Examples are always most helpful to get you started.
+
+  ffcast -s
+
+You will be asked to select a region using mouse, then ffmpeg starts recording.
+Press 'q' to end recording.  The output file by default is ffcast-*.mkv.
+
+  ffcast -svv ffmpeg -r 25 -- -f alsa -i hw:0 -vcodec libx264 cast.mkv
+
+Debug is turned on by -vv.  You will see in the debug output the ffmpeg command
+line that's called.  Notice that '--' from above is replaced with the x11grab
+input options, and other options are unchanged- That's indeed what ffcast does.
+
+  ffcast -ws
+
+You will be asked to first select a window by mouse click, and then a screen
+region by mouse.  The recorded region is the region selections combined by
+union.  Indeed, you can pass any number of -w and -s.
+
+  DISPLAY=:1 ffcast
+
+FFcast, as with xwininfo, xrectsel, respects the DISPLAY environment variable.
+The above records the whole screen of display :1.  This is useful when you run
+a nested X server with Xephyr and want to record stuff inside its window.
+
+FFcast 1.0 changes from 0.x
+---------------------------
+
+Many of the options are removed, and the code is considerably simplified and
+more readable. But the most significant change is that now the user can pass
+any valid argument to FFmpeg- FFcast will never touch FFmpeg's options other
+than the x11grab input ones (which is the point of FFcast).  The implication
+of this is that, for example, you can easily pass audio input options to get
+audio recording- a feature widely expected yet hard to implement/maintain.
+
+The reasoning is that FFcast should not know anything about FFmpeg except for
+what it must know.  In other words, I will not maintain the FFmpeg's crap,
+it's the user's responsibility to keep up with whatever FFmpeg changes.  In
+other words, FFcast doesn't hold the user's hands but gives him/her all the
+control.  Whatever works for you ;).  The part FFcast does touch, however, is
+the x11grab input options- currently something like this:
+
+  -f x11grab -s 600x400 -i :0.0+100+100
+
+That's it.
+
+Also changed is the xrectsel program.  It now supports several format strings.
+They are %x, %y, %X, %Y, %w, %h, %b and %d.  Read the source code for details.
+
+History
+-------
+
+Originally, Michal Witkowski (Neuro) posted[1] "x264 Lossless Screencast Script"
+at ArchLinux forums.  I then went on and heavily modified and extended the
+script, and finally released FFcast 0.x.  The idea behind Neuro's script was to
+parse xwininfo's output and pass it to ffmpeg, so you can easily record a window
+by simply clicking it.  I liked it, and naturally linked the behavior with the
+screenshot application 'scrot'.  I wanted to find a way to select an arbitrary
+screen region for capture.  I went on to look at the scrot source code, as well
+as post a topic[2] asking for help.  HashBox was very kind to post his code and
+even clean it up for me- I finally combined what I got from scrot and HashBox's
+code and put togethor xrectsel.c.  All was looking good to me.
+
+But obviously I was midguided to think it's a good idea to take control of all
+the irrelevant FFmpeg options and added even more (like -t).  And then people
+came to me and complained that FFcast doesn't do sound recording.  I at first
+still thought I should implement it, but then found that we simply couldn't-
+with all the sound systems out there, there's no easy way to determine the sound
+input device in the first place.  I could have added some options in the config
+file and whatnot, but I *knew* I was on the wrong track, so I did nothing.
+
+After a long time, a thread[3] at ArchLinux forums reminded me of FFcast and
+the painful fact that it sucked.  I then sat down, opened the script, and didn't
+read much before I started to write prototype code for FFcast 1.0.
+
+[1] https://bbs.archlinux.org/viewtopic.php?id=85237
+[2] https://bbs.archlinux.org/viewtopic.php?id=85378
+[3] https://bbs.archlinux.org/viewtopic.php?id=127335
+
+FAQ
+---
+
+Q: Why not support console recording?
+A: Since you asked, you probably know that ffmpeg can record framebuffer,
+   `ffmpeg -f fbdev -i /dev/fb0` for example.  The thing is ffmpeg's framebuffer
+   recording is very primitive- it does not support region selection of any
+   kind, just the whole screen.  Even if it did, we wouldn't be able to do the
+   same kind of interative selection as in X.  Due to these limitations and
+   the goal of ffcast, the user is better off using ffmpeg directly.
+   I also recommend 'ttyrec' for your tty recording needs.
+
+Q: Can I record audio using ffcast?
+A: Yes, you can do everything you like with ffmpeg since ffcast 1.0.
+

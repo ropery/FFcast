@@ -1,0 +1,365 @@
+#!/bin/bash
+
+set -e
+shopt -s extglob
+
+readonly progname=ffcast progver='@VERSION@'
+readonly cast_cmd=ffmpeg
+declare -a opt_args
+declare -a cast_args cast_cmdline x11grab_opts
+declare -a cast_args_default=(-v 1 -r 25 -- -vcodec libx264 "$progname-$(date +%Y%m%d-%H%M%S).mkv")
+declare -i borderless=1 mod16=0 verbosity=0
+PS4='debug: command: '  # for set -x
+x='+x'; [[ $- == *x* ]] && x='-x'  # save set -x
+readonly x
+
+#---
+# Functions
+
+_msg() {
+    local prefix=$1
+    shift || return
+    local fmt=$1
+    shift || return
+    printf "$prefix$fmt\n" "$@"
+}
+
+debug() {
+    (( verbosity >= 2 )) || return
+    _msg 'debug: ' "$@"
+} >&2
+
+verbose() {
+    (( verbosity >= 1 )) || return
+    _msg 'verbose: ' "$@"
+} >&2
+
+msg() {
+    (( verbosity >= 0 )) || return
+    _msg ':: ' "$@"
+} >&2
+
+warn() {
+    (( verbosity >= -1 )) || return
+    _msg 'warning: ' "$@"
+} >&2
+
+error() {
+    (( verbosity >= -1 )) || return
+    _msg 'error: ' "$@"
+} >&2
+
+parse_geospec_get_corners() {
+    local geospec=$1
+    local _x _y x_ y_ w h k
+    local n='?([-+])+([0-9])'
+    local m='?(-)+([0-9])'
+    local N='+([0-9])'
+    # strip whitespaces
+    IFS=$' \t' read -r geospec <<< "$geospec"
+    case $geospec in
+        $n,$n+([' \t'])$n,$n)  # x1,y1 x2,y2
+            IFS=$', \t' read _x _y x_ y_ <<< "$geospec"
+            ;;
+        ${N}x${N}\+${m}\+${m})  # wxh+x+y
+            IFS='x+' read w h _x _y <<< "$geospec"
+            (( x_ = rootw - _x - w ))
+            (( y_ = rooth - _y - h ))
+            ;;
+        *)
+            error "invalid geometry specification: \`%s'" "$geospec"
+            return 1
+            ;;
+    esac
+    printf '%d,%d %d,%d' $_x $_y $x_ $y_
+}
+
+region_intersect_corners() {
+    local corners
+    local _x _y x_ y_
+    local _X _Y X_ Y_
+    # Initialize variable- otherwise bash will fallback to 0
+    IFS=' ,' read _X _Y X_ Y_ <<< "$1"
+    shift || return 1
+    for corners in "$@"; do
+        IFS=' ,' read _x _y x_ y_ <<< "$corners"
+        (( _X = _x > _X ? _x : _X ))
+        (( _Y = _y > _Y ? _y : _Y ))
+        (( X_ = x_ > X_ ? x_ : X_ ))
+        (( Y_ = y_ > Y_ ? y_ : Y_ ))
+    done
+    printf '%d,%d %d,%d' $_X $_Y $X_ $Y_
+}
+
+region_union_corners() {
+    local corners
+    local _x _y x_ y_
+    local _X _Y X_ Y_
+    # Initialize variable- otherwise bash will fallback to 0
+    IFS=' ,' read _X _Y X_ Y_ <<< "$1"
+    shift || return 1
+    for corners in "$@"; do
+        IFS=' ,' read _x _y x_ y_ <<< "$corners"
+        (( _X = _x < _X ? _x : _X ))
+        (( _Y = _y < _Y ? _y : _Y ))
+        (( X_ = x_ < X_ ? x_ : X_ ))
+        (( Y_ = y_ < Y_ ? y_ : Y_ ))
+    done
+    printf '%d,%d %d,%d' $_X $_Y $X_ $Y_
+}
+
+select_region_get_corners() {
+    msg "%s" "please select a region using mouse"
+    xrectsel_get_corners
+}
+
+select_window_get_corners() {
+    msg "%s" "please click once in target window"
+    LC_ALL=C xwininfo | xwininfo_get_corners
+}
+
+# stdin: xrectsel output
+# stdout: x1,y1 x2,y2
+xrectsel_get_corners() {
+    # Note: requires xrectsel 0.3
+    xrectsel "%x,%y %X,%Y"
+}
+
+# stdin: xwininfo output (locale: C)
+# stdout: ${width}x${height}
+xwininfo_get_dimensions() {
+    local line
+    local -i w h
+    while IFS=$' \t' read -r line; do
+        if [[ $line == 'Width: '+([0-9]) ]]; then
+            w=${line#'Width: '}
+        elif [[ $line == 'Height: '+([0-9]) ]]; then
+            h=${line#'Height: '}
+        else
+            continue
+        fi
+        if (( w && h )); then
+            printf '%dx%d' $w $h
+            return
+        fi
+    done
+    return 1
+}
+
+# stdin: xwininfo output (locale: C)
+# stdout: x1,y1 x2,y2
+xwininfo_get_corners() {
+    local line
+    local _x _y x_ y_ b
+    local n='-?[0-9]+'
+    local corners="^Corners: *\\+($n)\\+($n) *-$n\\+$n *-($n)-($n) *\\+$n-$n\$"
+    # Note: explicitly set IFS to ensure stripping of whitespaces
+    while IFS=$' \t' read -r line; do
+        if [[ $line == 'Border width: '+([0-9]) ]]; then
+            b=${line#'Border width: '}
+        elif [[ $line =~ $corners ]]; then
+            _x=${BASH_REMATCH[1]}
+            _y=${BASH_REMATCH[2]}
+            x_=${BASH_REMATCH[3]}
+            y_=${BASH_REMATCH[4]}
+        else
+            continue
+        fi
+        [[ -n $_x ]] || continue
+        if  (( ! borderless )); then
+            :
+        elif [[ -n $b ]]; then
+            (( _x += b )) || :
+            (( _y += b )) || :
+            (( x_ += b )) || :
+            (( y_ += b )) || :
+        else
+            continue
+        fi
+        printf '%d,%d, %d,%d' $_x $_y $x_ $y_
+        return
+    done
+    return 1
+}
+
+#---
+# Split command line arguments into two parts:
+#
+#   ffcast ... ffmpeg ... [--] ...
+
+while (( $# )); do
+    [[ $1 == "$cast_cmd" ]] && break
+    opt_args+=("$1")
+    shift
+done
+
+if shift; then
+    cast_cmdline=("$cast_cmd" "$@")
+else
+    cast_cmdline=("$cast_cmd" "${cast_args_default[@]}")
+fi
+
+#---
+# Process arguments passed to ffcast, get a region geometry.
+
+declare -i rootw=0 rooth=0 _x=0 _y=0 x_=0 y_=0 w=0 h=0
+IFS='x' read rootw rooth <<< "$(LC_ALL=C xwininfo -root | xwininfo_get_dimensions)"
+
+set -- "${opt_args[@]}"
+
+usage() {
+    cat <<EOF
+$progname $progver
+Usage: ${0##*/} [arguments] [ffmpeg command]
+
+  Arguments:
+    -s           select a rectangular region by mouse
+    -w           select a window by mouse click
+    -b           include borders of selected window
+    -m           trim selected region to be mod 16
+    -q           less verbose
+    -v           more verbose
+    -h           print this help and exit
+    -H           print detailed help and exit
+    <geospec>    geometry specification
+
+  All the arguments can be repeated, and are processed in order.
+  For example, -vv is more verbose than -v.
+EOF
+if (( verbosity < 1 )); then
+cat <<EOF
+
+  Use \`${0##*/} -vh' for detailed help.
+EOF
+else
+cat <<EOF
+  Any number of selections are supported, e.g., -sw is valid.
+  All selected regions are combined by union.
+
+  FFmpeg command is run as given, with x11grab input options inserted,
+  either replacing the first instance of '--' or, if no '--' is given,
+  after 'ffmpeg'.  You can give any valid ffmpeg command line, e.g.,
+
+    ${0##*/} -s ffmpeg -r 25 -- -f alsa -i hw:0 -vcodec libx264 cast.mkv
+
+  <geospec> is usually not used.  It is intended as a way to use external
+  region selection commands.  For example,
+
+    ${0##*/} "\$(xrectsel '%x,%y %X,%Y')"
+
+  <geospec> must conform to one of the following syntax:
+
+  - x1,y1 x2,y2  (x1,y1) = (left,top) offset of the region
+                 (x2,y2) = (right,bottom) offset of the region
+  - wxh+x+y      (wxh) = dimension of the region
+                 (+x+y) = (+left+top) offset of the region
+EOF
+fi
+  exit $1
+}
+
+OPTIND=1
+i=0
+while getopts 'bhmqsvw' opt; do
+    case $opt in 
+        h)
+            usage 0
+            ;;
+        m)
+            mod16=1
+            ;;
+        s)
+            corners_list[i++]=$(select_region_get_corners)
+            debug "corners: %s" "${corners_list[-1]}"
+            ;;
+        w)
+            corners_list[i++]=$(select_window_get_corners)
+            debug "corners: %s" "${corners_list[-1]}"
+            ;;
+        b)
+            borderless=0
+            ;;
+        q)
+            (( verbosity-- )) || :
+            ;;
+        v)
+            (( verbosity++ )) || :
+            ;;
+    esac
+done
+shift $(( OPTIND -1 ))
+
+# The rest are geometry specifications
+while (( $# )); do
+    corners_list[i++]=$(parse_geospec_get_corners "$1")
+    debug "corners: %s" "${corners_list[-1]}"
+    shift
+done
+
+if (( i )); then
+    corners=$(region_union_corners "${corners_list[@]}")
+    debug "corners union all selections: %s" "${corners}"
+    corners=$(region_intersect_corners "$corners" "0,0 0,0")
+    debug "corners rootwin intersection: %s" "${corners}"
+    IFS=' ,' read _x _y x_ y_ <<< "$corners"
+fi
+
+(( w = rootw - _x - x_ ))
+(( h = rooth - _y - y_ ))
+# x264 requires frame size divisible by 2, mod 16 is said to be optimal.
+# Adapt by reducing- expanding could exceed screen edges, and would not
+# be much beneficial anyway.
+if (( mod16 )); then
+    w_old=w
+    h_old=h
+    (( w = 16 * (w / 16) ))
+    (( h = 16 * (h / 16) ))
+else
+    w_old=w
+    h_old=h
+    (( w = 2 * (w / 2) ))
+    (( h = 2 * (h / 2) ))
+fi
+
+if (( verbosity >= 1 )); then
+    if (( w < w_old )); then
+        verbose 'trim frame width from %d to %d' $w_old $w
+    fi
+    if (( h < h_old )); then
+        verbose 'trim frame height from %d to %d' $h_old $h
+    fi
+fi
+
+x11grab_opts=(-f x11grab -s "${w}x${h}" -i "${DISPLAY}+${_x},${_y}")
+
+#---
+# Insert x11grab options into ffmpeg command line.
+
+set -- "${cast_cmdline[@]}"
+
+if ! shift; then
+    error 'no ffmpeg command line specified'
+    exit 1
+fi
+
+while (( $# )); do
+    if [[ $1 == '--' ]]; then
+        cast_args+=("${x11grab_opts[@]}")
+        break
+    else
+        cast_args+=("$1")
+        shift
+    fi
+done
+
+if shift; then  # got '--'
+    cast_args+=("$@")
+else  # no '--', then put x11grab options at first
+    cast_args=("${x11grab_opts[@]}" "${cast_args[@]}")
+fi
+
+(( verbosity >= 2 )) && set -x
+"${cast_cmd}" "${cast_args[@]}"
+set $x
+
+# vim:ts=4:sw=4:et:
