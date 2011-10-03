@@ -6,6 +6,24 @@ geometry to FFmpeg for screen recording.
 
 FFcast version 1.0 rewritten from scratch, and incompatible with version 0.x.
 
+Design
+------
+
+Imagine an "interactive" FFmpeg input file for x11grab,
+
+  ffmpeg <options> -f x11grab -i interactive <options>
+
+which prompts the user to select a screen region, and then starts recording it.
+
+FFcast is designed to do exactly this.  It's true that FFcast can be considered
+more of a FFmpeg plugin rather than a FFmpeg wrapper- it does not wrap around
+the FFmpeg options, but simply leaves them to FFmpeg.  The command line syntax
+of FFcast conforms much to this point of view:
+
+  ffcast <...> ffmpeg <options> -- <options>
+
+Compare this to the hypothetical FFmpeg comand line, the mapping is obvious.
+
 Usage
 -----
 
@@ -16,7 +34,7 @@ Examples are always most helpful to get you started.
 You will be asked to select a region using mouse, then ffmpeg starts recording.
 Press 'q' to end recording.  The output file by default is ffcast-*.mkv.
 
-  ffcast -svv ffmpeg -r 25 -- -f alsa -i hw:0 -vcodec libx264 cast.mkv
+  ffcast -vvs ffmpeg -r 25 -- -f alsa -i hw:0 -vcodec libx264 cast.mkv
 
 Debug is turned on by -vv.  You will see in the debug output the ffmpeg command
 line that's called.  Notice that '--' from above is replaced with the x11grab
@@ -30,7 +48,7 @@ union.  Indeed, you can pass any number of -w and -s.
 
   DISPLAY=:1 ffcast
 
-FFcast, as with xwininfo, xrectsel, respects the DISPLAY environment variable.
+FFcast, as with xwininfo and xrectsel, respects the DISPLAY environment variable.
 The above records the whole screen of display :1.  This is useful when you run
 a nested X server with Xephyr and want to record stuff inside its window.
 
@@ -103,3 +121,7 @@ A: Since you asked, you probably know that ffmpeg can record framebuffer,
 Q: Can I record audio using FFcast?
 A: Yes, you can do everything you like with ffmpeg since FFcast 1.0.
 
+Q: Why is the video quality so poor?
+A: That's none of my business- you're the one responsible to pass the right
+   flags to ffmpeg, not FFcast.  That said, if you think the default FFmpeg
+   flags are stupid and sucks, feel free to suggest a decent combination.
