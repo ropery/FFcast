@@ -8,7 +8,7 @@ readonly cast_cmd=ffmpeg
 declare -a opt_args
 declare -a cast_args cast_cmdline x11grab_opts
 declare -a cast_args_default=(-v 1 -r 25 -- -vcodec libx264 "$progname-$(date +%Y%m%d-%H%M%S).mkv")
-declare -i borderless=1 mod16=0 verbosity=0
+declare -i borderless=1 mod16=0 print_geometry_only=0 verbosity=0
 PS4='debug: command: '  # for set -x
 x='+x'; [[ $- == *x* ]] && x='-x'  # save set -x
 readonly x
@@ -217,10 +217,10 @@ Usage: ${0##*/} [arguments] [ffmpeg command]
     -w           select a window by mouse click
     -b           include borders of selected window
     -m           trim selected region to be mod 16
+    -p           print region geometry only
     -q           less verbose
     -v           more verbose
     -h           print this help and exit
-    -H           print detailed help and exit
     <geospec>    geometry specification
 
   All the arguments can be repeated, and are processed in order.
@@ -260,7 +260,7 @@ fi
 
 OPTIND=1
 i=0
-while getopts 'bhmqsvw' opt; do
+while getopts 'bhmpqsvw' opt; do
     case $opt in 
         h)
             usage 0
@@ -278,6 +278,9 @@ while getopts 'bhmqsvw' opt; do
             ;;
         b)
             borderless=0
+            ;;
+        p)
+            print_geometry_only=1
             ;;
         q)
             (( verbosity-- )) || :
@@ -306,6 +309,11 @@ fi
 
 (( w = rootw - _x - x_ ))
 (( h = rooth - _y - y_ ))
+
+if (( print_geometry_only )); then
+    printf "%dx%d+%d+%d" $w $h $_x $_y
+    exit
+fi
 
 # x264 requires frame size divisible by 2, mod 16 is said to be optimal.
 # Adapt by reducing- expanding could exceed screen edges, and would not
