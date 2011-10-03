@@ -20,7 +20,7 @@ Press 'q' to end recording.  The output file by default is ffcast-*.mkv.
 
 Debug is turned on by -vv.  You will see in the debug output the ffmpeg command
 line that's called.  Notice that '--' from above is replaced with the x11grab
-input options, and other options are unchanged- That's indeed what ffcast does.
+input options, and other options are unchanged- That's indeed what FFcast does.
 
   ffcast -ws
 
@@ -97,9 +97,9 @@ A: Since you asked, you probably know that ffmpeg can record framebuffer,
    recording is very primitive- it does not support region selection of any
    kind, just the whole screen.  Even if it did, we wouldn't be able to do the
    same kind of interative selection as in X.  Due to these limitations and
-   the goal of ffcast, the user is better off using ffmpeg directly.
+   the goal of FFcast, the user is better off using ffmpeg directly.
    I also recommend 'ttyrec' for your tty recording needs.
 
-Q: Can I record audio using ffcast?
-A: Yes, you can do everything you like with ffmpeg since ffcast 1.0.
+Q: Can I record audio using FFcast?
+A: Yes, you can do everything you like with ffmpeg since FFcast 1.0.
 
