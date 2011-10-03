@@ -1,5 +1,5 @@
-OUT        =  xrectsel
-VERSION    =  $(shell git describe)
+OUT        = xrectsel
+VERSION    = $(shell git describe)
 
 SRC        = ${wildcard *.c}
 OBJ        = ${SRC:.c=.o}
