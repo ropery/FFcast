@@ -223,6 +223,7 @@ Usage: ${0##*/} [arguments] [ffmpeg command]
     -h           print this help and exit
     <geospec>    geometry specification
 
+  If no region-selecting argument is passed, select fullscreen.
   All the arguments can be repeated, and are processed in order.
   For example, -vv is more verbose than -v.
 EOF
