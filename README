@@ -24,6 +24,25 @@ of FFcast conforms much to this point of view:
 
 Compare this to the hypothetical FFmpeg comand line, the mapping is obvious.
 
+Requirements
+------------
+
+[FFcast]
+
+  * Bash 4.2
+  * FFmpeg
+  * xrectsel - for the -s option (included)
+  * xwininfo - for the -w option
+
+[xrectsel]
+
+  * libX11
+
+Installation
+------------
+
+The usual `make && make install` works as expected.  Read Makefile for details.
+
 Usage
 -----
 
@@ -33,12 +52,12 @@ Examples are always most helpful to get you started.
 
 Start fullscreen capture.  In this simplest form, where no region-selecting
 argument is passed, FFcast selects the root window and passes its geometry to
-FFmpeg.
+FFmpeg.  Press 'q' to end recording.  The output file is named ffcast-*.mkv.
 
   ffcast -s
 
-You will be asked to select a region using mouse, then FFmpeg starts recording.
-Press 'q' to end recording.  The output file by default is ffcast-*.mkv.
+You will be asked to select a region using mouse, then FFmpeg starts recording
+the selected region.
 
   ffcast -vvs ffmpeg -r 25 -- -f alsa -i hw:0 -vcodec libx264 cast.mkv
 
@@ -58,7 +77,7 @@ FFcast, as with xwininfo and xrectsel, respects the DISPLAY environment variable
 The above records the whole screen of display :1.  This is useful when you run
 a nested X server with Xephyr and want to record stuff inside its window.
 
-FFcast 1.0 changes from 0.x
+FFcast 1.0 Changes From 0.x
 ---------------------------
 
 Many of the options are removed, and the code is considerably simplified and
