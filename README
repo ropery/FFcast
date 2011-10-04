@@ -38,6 +38,13 @@ Requirements
 
   * libX11
 
+Get the Source
+--------------
+
+Releases: https://github.com/lolilolicon/FFcast2/downloads
+
+Git repo: git://github.com/lolilolicon/FFcast2.git
+
 Installation
 ------------
 
@@ -152,3 +159,9 @@ Q: Why is the video quality so poor?
 A: That's none of my business- you're the one responsible to pass the right
    flags to FFmpeg, not FFcast.  That said, if you think the default FFmpeg
    flags are stupid and suck, feel free to suggest a decent combination.
+
+Q: Why does FFcast not do foo-bar-baz?
+A: Probably it shouldn't.  In many cases, the right solution is to wrap around
+   FFcast/FFmpeg a quick and dirty specialized script- especially regarding
+   encoding options.  By design, FFcast is basically FFmpeg with an interactive
+   selection plugin and probably shouldn't do your foo-bar-baz.
