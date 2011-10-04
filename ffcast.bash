@@ -51,7 +51,7 @@ error() {
 
 parse_geospec_get_corners() {
     local geospec=$1
-    local _x _y x_ y_ w h k
+    local _x _y x_ y_ w h
     local n='?([-+])+([0-9])'
     local m='?(-)+([0-9])'
     local N='+([0-9])'
@@ -63,8 +63,8 @@ parse_geospec_get_corners() {
             ;;
         ${N}x${N}\+${m}\+${m})  # wxh+x+y
             IFS='x+' read w h _x _y <<< "$geospec"
-            (( x_ = rootw - _x - w ))
-            (( y_ = rooth - _y - h ))
+            (( x_ = rootw - _x - w )) || :
+            (( y_ = rooth - _y - h )) || :
             ;;
         *)
             error "invalid geometry specification: \`%s'" "$geospec"
@@ -83,10 +83,10 @@ region_intersect_corners() {
     shift || return 1
     for corners in "$@"; do
         IFS=' ,' read _x _y x_ y_ <<< "$corners"
-        (( _X = _x > _X ? _x : _X ))
-        (( _Y = _y > _Y ? _y : _Y ))
-        (( X_ = x_ > X_ ? x_ : X_ ))
-        (( Y_ = y_ > Y_ ? y_ : Y_ ))
+        (( _X = _x > _X ? _x : _X )) || :
+        (( _Y = _y > _Y ? _y : _Y )) || :
+        (( X_ = x_ > X_ ? x_ : X_ )) || :
+        (( Y_ = y_ > Y_ ? y_ : Y_ )) || :
     done
     printf '%d,%d %d,%d' $_X $_Y $X_ $Y_
 }
@@ -100,10 +100,10 @@ region_union_corners() {
     shift || return 1
     for corners in "$@"; do
         IFS=' ,' read _x _y x_ y_ <<< "$corners"
-        (( _X = _x < _X ? _x : _X ))
-        (( _Y = _y < _Y ? _y : _Y ))
-        (( X_ = x_ < X_ ? x_ : X_ ))
-        (( Y_ = y_ < Y_ ? y_ : Y_ ))
+        (( _X = _x < _X ? _x : _X )) || :
+        (( _Y = _y < _Y ? _y : _Y )) || :
+        (( X_ = x_ < X_ ? x_ : X_ )) || :
+        (( Y_ = y_ < Y_ ? y_ : Y_ )) || :
     done
     printf '%d,%d %d,%d' $_X $_Y $X_ $Y_
 }
@@ -118,7 +118,6 @@ select_window_get_corners() {
     LC_ALL=C xwininfo | xwininfo_get_corners
 }
 
-# stdin: xrectsel output
 # stdout: x1,y1 x2,y2
 xrectsel_get_corners() {
     # Note: requires xrectsel 0.3
@@ -252,7 +251,7 @@ cat <<EOF
 
   - x1,y1 x2,y2  (x1,y1) = (left,top) offset of the region
                  (x2,y2) = (right,bottom) offset of the region
-  - wxh+x+y      (wxh) = dimension of the region
+  - wxh+x+y      (wxh) = dimensions of the region
                  (+x+y) = (+left+top) offset of the region
 EOF
 fi
@@ -308,8 +307,14 @@ if (( i )); then
     IFS=' ,' read _x _y x_ y_ <<< "$corners"
 fi
 
-(( w = rootw - _x - x_ ))
-(( h = rooth - _y - y_ ))
+if ! (( w = rootw - _x - x_ )) || (( w < 0 )); then
+    error 'region: invalid width: %d' "$w"
+    exit 1
+fi
+if ! (( h = rooth - _y - y_ )) || (( h < 0 )); then
+    error 'region: invalid height: %d' "$h"
+    exit 1
+fi
 
 if (( print_geometry_only )); then
     printf "%dx%d+%d+%d" $w $h $_x $_y
@@ -319,24 +324,26 @@ fi
 # x264 requires frame size divisible by 2, mod 16 is said to be optimal.
 # Adapt by reducing- expanding could exceed screen edges, and would not
 # be much beneficial anyway.
-if (( mod16 )); then
-    w_old=w
-    h_old=h
-    (( w = 16 * (w / 16) ))
-    (( h = 16 * (h / 16) ))
-else
-    w_old=w
-    h_old=h
-    (( w = 2 * (w / 2) ))
-    (( h = 2 * (h / 2) ))
+(( mod = mod16 ? 16 : 2 ))
+
+w_old=$w
+h_old=$h
+
+if ! (( w = mod * (w / mod) )); then
+    error 'region: width too small for mod%d: %d' $mod $w_old
+    exit 1
+fi
+if ! (( h = mod * (h / mod) )); then
+    error 'region: height too small for mod%d: %d' $mod $h_old
+    exit 1
 fi
 
 if (( verbosity >= 1 )); then
     if (( w < w_old )); then
-        verbose 'trim frame width from %d to %d' $w_old $w
+        verbose 'region: trim width from %d to %d' $w_old $w
     fi
     if (( h < h_old )); then
-        verbose 'trim frame height from %d to %d' $h_old $h
+        verbose 'region: trim height from %d to %d' $h_old $h
     fi
 fi
 
