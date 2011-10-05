@@ -134,8 +134,6 @@ static int select_region(Display *dpy, Window root, Region *region)
   /* Grab pointer for these events */
   XGrabPointer(dpy, root, True, PointerMotionMask | ButtonPressMask | ButtonReleaseMask,
                GrabModeAsync, GrabModeAsync, None, cursor, CurrentTime);
-  /* Grab keyboard */
-  XGrabKeyboard(dpy, root, False, GrabModeAsync, GrabModeAsync, CurrentTime);
 
   sel_gv.function = GXinvert;
   sel_gv.subwindow_mode = IncludeInferiors;
@@ -181,12 +179,6 @@ static int select_region(Display *dpy, Window root, Region *region)
       case ButtonRelease:
         done = 1;
         break;
-      case KeyPress:
-        error("Keyboard pressed, aborting\n");
-        done = 2;
-        break;
-      case KeyRelease:
-        break;
       default:
         break;
     }
@@ -199,34 +191,30 @@ static int select_region(Display *dpy, Window root, Region *region)
   XFlush(dpy);
 
   XUngrabPointer(dpy, CurrentTime);
-  XUngrabKeyboard(dpy, CurrentTime);
   XFreeCursor(dpy, cursor);
   XFreeGC(dpy, sel_gc);
   XSync(dpy, 1);
 
-  if (done < 2) {
-    Region rr; /* root region */
-    Region sr; /* selected region */
+  Region rr; /* root region */
+  Region sr; /* selected region */
 
-    if (False == XGetGeometry(dpy, root, &rr.root, &rr.x, &rr.y, &rr.w, &rr.h, &rr.b, &rr.d)) {
-      error("failed to get root window geometry\n");
-      return EXIT_FAILURE;
-    }
-    sr.x = x;
-    sr.y = y;
-    /* note: signed to unsigned int conversion
-     * since width is guaranteed to be non-negative, converting it to unsigned
-     * int works here */
-    sr.w = width;
-    sr.h = height;
-    /* calculate right and bottom offset */
-    sr.X = rr.w - sr.x - sr.w;
-    sr.Y = rr.h - sr.y - sr.h;
-    /* those doesn't really make sense but should be set */
-    sr.b = rr.b;
-    sr.d = rr.d;
-    *region = sr;
-    return EXIT_SUCCESS;
+  if (False == XGetGeometry(dpy, root, &rr.root, &rr.x, &rr.y, &rr.w, &rr.h, &rr.b, &rr.d)) {
+    error("failed to get root window geometry\n");
+    return EXIT_FAILURE;
   }
-  return EXIT_FAILURE;
+  sr.x = x;
+  sr.y = y;
+  /* note: signed to unsigned int conversion
+   * since width is guaranteed to be non-negative, converting it to unsigned
+   * int works here */
+  sr.w = width;
+  sr.h = height;
+  /* calculate right and bottom offset */
+  sr.X = rr.w - sr.x - sr.w;
+  sr.Y = rr.h - sr.y - sr.h;
+  /* those doesn't really make sense but should be set */
+  sr.b = rr.b;
+  sr.d = rr.d;
+  *region = sr;
+  return EXIT_SUCCESS;
 }
