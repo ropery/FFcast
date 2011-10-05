@@ -4,7 +4,7 @@ set -e
 shopt -s extglob
 
 readonly progname=ffcast progver='@VERSION@'
-readonly cast_cmd_pattern='@(ffmpeg)'
+readonly cast_cmd_pattern='@(ffmpeg|recordmydesktop)'
 declare -a cast_args x11grab_opts
 declare -a cast_cmdline=(ffmpeg -v 1 -r 25 -- -vcodec libx264 \
     "$progname-$(date +%Y%m%d-%H%M%S).mkv")
@@ -354,6 +354,9 @@ fi
 case $cast_cmd in
     ffmpeg)
         x11grab_opts=(-f x11grab -s "${w}x${h}" -i "${DISPLAY}+${_x},${_y}")
+        ;;
+    recordmydesktop)
+        x11grab_opts=(-display "${DISPLAY}" -x "$_x" -y "$_y" -width "$w" -height "$h")
         ;;
     *)
         error "invalid cast command: \`%s'" "$cast_cmd"
