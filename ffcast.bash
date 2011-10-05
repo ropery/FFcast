@@ -4,10 +4,11 @@ set -e
 shopt -s extglob
 
 readonly progname=ffcast progver='@VERSION@'
-readonly cast_cmd=ffmpeg
-declare -a opt_args
-declare -a cast_args cast_cmdline x11grab_opts
-declare -a cast_args_default=(-v 1 -r 25 -- -vcodec libx264 "$progname-$(date +%Y%m%d-%H%M%S).mkv")
+readonly cast_cmd_pattern='@(ffmpeg)'
+declare -a cast_args x11grab_opts
+declare -a cast_cmdline=(ffmpeg -v 1 -r 25 -- -vcodec libx264 \
+    "$progname-$(date +%Y%m%d-%H%M%S).mkv")
+declare -- cast_cmd=${cast_cmdline[0]}
 declare -i borderless=1 mod16=0 print_geometry_only=0 verbosity=0
 PS4='debug: command: '  # for set -x
 x='+x'; [[ $- == *x* ]] && x='-x'  # save set -x
@@ -182,36 +183,17 @@ xwininfo_get_corners() {
 }
 
 #---
-# Split command line arguments into two parts:
-#
-#   ffcast ... ffmpeg ... [--] ...
-
-while (( $# )); do
-    [[ $1 == "$cast_cmd" ]] && break
-    opt_args+=("$1")
-    shift
-done
-
-if shift; then
-    cast_cmdline=("$cast_cmd" "$@")
-else
-    cast_cmdline=("$cast_cmd" "${cast_args_default[@]}")
-fi
-
-#---
-# Process arguments passed to ffcast, get a region geometry.
+# Process arguments passed to ffcast
 
 declare rootw=0 rooth=0 _x=0 _y=0 x_=0 y_=0 w=0 h=0
 IFS='x' read rootw rooth <<< "$(LC_ALL=C xwininfo -root | xwininfo_get_dimensions)"
 # Note: this is safe because xwininfo_get_dimensions ensures that its output is
 # either {int}x{int} or empty, a random string like "rootw" is impossible.
-if ! (( rootw && rooth ))
+if ! (( rootw && rooth )); then
     # %d is OK even if rootw and rooth are empty, in which case they're valued 0.
     error 'invalid root window dimensions: %dx%d' "$rootw" "$rooth"
     exit 1
 fi
-
-set -- "${opt_args[@]}"
 
 usage() {
     cat <<EOF
@@ -299,8 +281,15 @@ while getopts 'bhmpqsvw' opt; do
 done
 shift $(( OPTIND -1 ))
 
-# The rest are geometry specifications
+#---
+# Process region geometry
+
 while (( $# )); do
+    if [[ $1 == $cast_cmd_pattern ]]; then
+        cast_cmd=$1
+        break
+    fi
+    # The rest are geometry specifications
     corners_list[i++]=$(parse_geospec_get_corners "$1")
     debug "corners: %s" "${corners_list[-1]}"
     shift
@@ -324,7 +313,7 @@ if ! (( h = rooth - _y - y_ )) || (( h < 0 )); then
 fi
 
 if (( print_geometry_only )); then
-    printf "%dx%d+%d+%d" $w $h $_x $_y
+    printf "%dx%d+%d+%d\n" $w $h $_x $_y
     exit
 fi
 
@@ -354,15 +343,33 @@ if (( verbosity >= 1 )); then
     fi
 fi
 
-x11grab_opts=(-f x11grab -s "${w}x${h}" -i "${DISPLAY}+${_x},${_y}")
+#---
+# Validate cast command, set up x11grab options
+
+if shift; then
+    cast_cmdline=("$cast_cmd" "$@")
+fi
+
+# Important validation
+case $cast_cmd in
+    ffmpeg)
+        x11grab_opts=(-f x11grab -s "${w}x${h}" -i "${DISPLAY}+${_x},${_y}")
+        ;;
+    *)
+        error "invalid cast command: \`%s'" "$cast_cmd"
+        exit 1
+        ;;
+esac
+
+readonly cast_cmd
 
 #---
-# Insert x11grab options into ffmpeg command line.
+# Insert x11grab options into cast command line.
 
 set -- "${cast_cmdline[@]}"
 
 if ! shift; then
-    error 'no ffmpeg command line specified'
+    error 'no cast command line specified'
     exit 1
 fi
 
