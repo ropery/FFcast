@@ -9,6 +9,7 @@ declare -a cast_args x11grab_opts
 declare -a cast_cmdline=(ffmpeg -v 1 -r 25 -- -vcodec libx264 \
     "$progname-$(date +%Y%m%d-%H%M%S).mkv")
 declare -- cast_cmd=${cast_cmdline[0]}
+declare -- region_select_action
 declare -i borderless=1 mod16=0 print_geometry_only=0 verbosity=0
 PS4='debug: command: '  # for set -x
 x='+x'; [[ $- == *x* ]] && x='-x'  # save set -x
@@ -185,16 +186,6 @@ xwininfo_get_corners() {
 #---
 # Process arguments passed to ffcast
 
-declare rootw=0 rooth=0 _x=0 _y=0 x_=0 y_=0 w=0 h=0
-IFS='x' read rootw rooth <<< "$(LC_ALL=C xwininfo -root | xwininfo_get_dimensions)"
-# Note: this is safe because xwininfo_get_dimensions ensures that its output is
-# either {int}x{int} or empty, a random string like "rootw" is impossible.
-if ! (( rootw && rooth )); then
-    # %d is OK even if rootw and rooth are empty, in which case they're valued 0.
-    error 'invalid root window dimensions: %dx%d' "$rootw" "$rooth"
-    exit 1
-fi
-
 usage() {
     cat <<EOF
 $progname $progver
@@ -258,12 +249,10 @@ while getopts 'bhmpqsvw' opt; do
             mod16=1
             ;;
         s)
-            corners_list[i++]=$(select_region_get_corners)
-            debug "corners: %s" "${corners_list[-1]}"
+            region_select_action+='s'
             ;;
         w)
-            corners_list[i++]=$(select_window_get_corners)
-            debug "corners: %s" "${corners_list[-1]}"
+            region_select_action+='w'
             ;;
         b)
             borderless=0
@@ -284,6 +273,16 @@ shift $(( OPTIND -1 ))
 #---
 # Process region geometry
 
+declare rootw=0 rooth=0 _x=0 _y=0 x_=0 y_=0 w=0 h=0
+IFS='x' read rootw rooth <<< "$(LC_ALL=C xwininfo -root | xwininfo_get_dimensions)"
+# Note: this is safe because xwininfo_get_dimensions ensures that its output is
+# either {int}x{int} or empty, a random string like "rootw" is impossible.
+if ! (( rootw && rooth )); then
+    # %d is OK even if rootw and rooth are empty, in which case they're valued 0.
+    error 'invalid root window dimensions: %dx%d' "$rootw" "$rooth"
+    exit 1
+fi
+
 while (( $# )); do
     if [[ $1 == $cast_cmd_pattern ]]; then
         cast_cmd=$1
@@ -294,6 +293,19 @@ while (( $# )); do
     debug "corners: %s" "${corners_list[-1]}"
     shift
 done
+
+while read -n 1; do
+    case $REPLY in
+        's')
+            corners_list[i++]=$(select_region_get_corners)
+            debug "corners: %s" "${corners_list[-1]}"
+            ;;
+        'w')
+            corners_list[i++]=$(select_window_get_corners)
+            debug "corners: %s" "${corners_list[-1]}"
+            ;;
+    esac
+done <<< "$region_select_action"
 
 if (( i )); then
     corners=$(region_union_corners "${corners_list[@]}")
