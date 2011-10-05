@@ -128,7 +128,7 @@ xrectsel_get_corners() {
 # stdout: ${width}x${height}
 xwininfo_get_dimensions() {
     local line
-    local -i w h
+    local w h
     while IFS=$' \t' read -r line; do
         if [[ $line == 'Width: '+([0-9]) ]]; then
             w=${line#'Width: '}
@@ -201,8 +201,15 @@ fi
 #---
 # Process arguments passed to ffcast, get a region geometry.
 
-declare -i rootw=0 rooth=0 _x=0 _y=0 x_=0 y_=0 w=0 h=0
+declare rootw=0 rooth=0 _x=0 _y=0 x_=0 y_=0 w=0 h=0
 IFS='x' read rootw rooth <<< "$(LC_ALL=C xwininfo -root | xwininfo_get_dimensions)"
+# Note: this is safe because xwininfo_get_dimensions ensures that its output is
+# either {int}x{int} or empty, a random string like "rootw" is impossible.
+if ! (( rootw && rooth ))
+    # %d is OK even if rootw and rooth are empty, in which case they're valued 0.
+    error 'invalid root window dimensions: %dx%d' "$rootw" "$rooth"
+    exit 1
+fi
 
 set -- "${opt_args[@]}"
 
