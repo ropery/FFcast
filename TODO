@@ -1,2 +1,5 @@
 * Choose a decent set of default ffmpeg options- ask experts ;)
 * Add verbose and debug messages- never fail silently.
+* Add support for more "backends"- not that one is not a maintainability
+  hell already, but as I said- because I'm a kind person.
+* Add bash_completion / zsh_completion.
