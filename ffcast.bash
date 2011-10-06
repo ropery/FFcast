@@ -51,6 +51,12 @@ error() {
     _msg 'error: ' "$@"
 } >&2
 
+list_cast_cmds() {
+    local -a cmds
+    IFS='|' read -a cmds <<< "${cast_cmd_pattern:2: -1}"
+    printf "%s\n" "${cmds[@]}"
+}
+
 parse_geospec_get_corners() {
     local geospec=$1
     local _x _y x_ y_ w h
@@ -197,6 +203,7 @@ Usage: ${0##*/} [arguments] [ffmpeg command]
     -b           include borders of selected window
     -m           trim selected region to be mod 16
     -p           print region geometry only
+    -l           list supported screencast commands
     -q           less verbose
     -v           more verbose
     -h           print this help and exit
@@ -240,10 +247,14 @@ fi
 
 OPTIND=1
 i=0
-while getopts 'bhmpqsvw' opt; do
+while getopts 'bhlmpqsvw' opt; do
     case $opt in 
         h)
             usage 0
+            ;;
+        l)
+            list_cast_cmds
+            exit
             ;;
         m)
             mod16=1
