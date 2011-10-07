@@ -125,7 +125,8 @@ static int select_region(Display *dpy, Window root, Region *region)
   XGCValues sel_gv;
 
   int done = 0, btn_pressed = 0;
-  int x = 0, y = 0, width = 0, height = 0;
+  int x = 0, y = 0;
+  unsigned int width = 0, height = 0;
   int start_x = 0, start_y = 0;
 
   Cursor cursor;
@@ -155,22 +156,22 @@ static int select_region(Display *dpy, Window root, Region *region)
           /* Re-draw last Rectangle to clear it */
           XDrawRectangle(dpy, root, sel_gc, x, y, width, height);
 
-          width = ev.xbutton.x_root - start_x;
-          height = ev.xbutton.y_root - start_y;
+          x = ev.xbutton.x_root;
+          y = ev.xbutton.y_root;
 
-          /* Cursor moves backwards, (x,y) always is the northwest pole */
-          if (width < 0) {
-              width = 0 - width;
-              x = start_x - width;
+          if (x > start_x) {
+            width = x - start_x;
+            x = start_x;
           } else {
-              x = start_x;
+            width = start_x - x;
           }
-          if (height < 0) {
-              height = 0 - height;
-              y = start_y - height;
+          if (y > start_y) {
+            height = y - start_y;
+            y = start_y;
           } else {
-              y = start_y;
+            height = start_y - y;
           }
+
           /* Draw Rectangle */
           XDrawRectangle(dpy, root, sel_gc, x, y, width, height);
           XFlush(dpy);
@@ -204,9 +205,6 @@ static int select_region(Display *dpy, Window root, Region *region)
   }
   sr.x = x;
   sr.y = y;
-  /* note: signed to unsigned int conversion
-   * since width is guaranteed to be non-negative, converting it to unsigned
-   * int works here */
   sr.w = width;
   sr.h = height;
   /* calculate right and bottom offset */
