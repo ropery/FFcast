@@ -383,7 +383,12 @@ case $cast_cmd in
             --display="$DISPLAY")
         ;;
     recordmydesktop)
-        x11grab_opts=(-display "${DISPLAY}" -x "$_x" -y "$_y" -width "$w" -height "$h")
+        x11grab_opts=(-display "$DISPLAY")
+        # As of recordMyDesktop 0.3.8.1, x- and y-offsets default to 0, but
+        # -x and -y don't accept 0 as an argument. #FAIL
+        (( _x )) && x11grab_opts+=(-x "$_x")
+        (( _y )) && x11grab_opts+=(-y "$_y")
+        x11grab_opts+=(-width "$w" -height "$h")
         ;;
     *)
         error "invalid cast command: \`%s'" "$cast_cmd"
