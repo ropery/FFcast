@@ -23,7 +23,7 @@ readonly progname=ffcast progver='@VERSION@'
 readonly cast_cmd_pattern='@(ffmpeg|byzanz-record|recordmydesktop)'
 declare -a cast_args x11grab_opts
 declare -a cast_cmdline=(ffmpeg -v 1 -r 25 -- -vcodec libx264 \
-    "$progname-$(date +%Y%m%d-%H%M%S).mkv")
+    "$(printf '%s-%(%Y%m%d-%H%M%S)T.mkv' "$progname" -1)")
 declare -- cast_cmd=${cast_cmdline[0]}
 declare -- region_select_action
 declare -i borderless=1 mod16=0 print_geometry_only=0 verbosity=0
