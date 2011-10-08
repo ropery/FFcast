@@ -4,7 +4,7 @@ FFcast
 FFcast helps the user interactively select a screen region and hands over the
 geometry to FFmpeg for screen recording.
 
-FFcast version 1.0 rewritten from scratch, and incompatible with version 0.x.
+FFcast version 1.0 is rewritten from scratch, and incompatible with version 0.x.
 
 Design
 ------
@@ -76,13 +76,24 @@ input options, and other options are unchanged- That's indeed what FFcast does.
 
 You will be asked to first select a window by mouse click, and then a screen
 region by mouse.  The recorded region is the region selections combined by
-union.  Indeed, you can pass any number of -w and -s.
+union.  Indeed, you can pass any number of -w and -s.  This can in particular
+be very helpful for recording multi-window applications, such as the GIMP.
 
   DISPLAY=:1 ffcast
 
 FFcast, as with xwininfo and xrectsel, respects the DISPLAY environment variable.
 The above records the whole screen of display :1.  This is useful when you run
 a nested X server with Xephyr and want to record stuff inside its window.
+
+  ffcast -w recordmydesktop -- -o cast.ogv
+
+An example of using an alternative recording command, recordmydesktop (rmd).
+You will be asked to select a window, and then rmd is called to record it.
+The magic, again, is FFcast injects the -diplay, -x, -y, -width and -height
+options into the rmd command line, replacing the first occurrence of '--'.
+The '--' can also be omitted, since FFcast by default injects the geometry
+options right after the screencast command.  Use `ffcast -l` to get a list of
+supported screencast commands.
 
 FFcast 1.0 Changes From 0.x
 ---------------------------
@@ -124,7 +135,7 @@ code and put togethor xrectsel.c.  All was looking good to me.
 
 But obviously I was misguided to think it's a good idea to take control of all
 the irrelevant FFmpeg options and added even more (like -t).  And then people
-came to me and complained that FFcast doesn't do sound recording.  I at first
+came to me and complained that FFcast didn't do sound recording.  I at first
 still thought I should implement it, but then found that we simply couldn't-
 with all the sound systems out there, there's no easy way to determine the sound
 input device in the first place.  I could have added some options in the config
