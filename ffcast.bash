@@ -262,7 +262,6 @@ fi
 }
 
 OPTIND=1
-i=0
 while getopts 'bhlmpqsvw' opt; do
     case $opt in 
         h)
@@ -309,6 +308,9 @@ if ! (( rootw && rooth )); then
     error 'invalid root window dimensions: %dx%d' "$rootw" "$rooth"
     exit 1
 fi
+
+declare -- i=0
+declare -a corners_list
 
 while (( $# )); do
     if [[ $1 == $cast_cmd_pattern ]]; then
