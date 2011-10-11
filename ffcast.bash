@@ -300,11 +300,11 @@ shift $(( OPTIND -1 ))
 # Process region geometry
 
 declare rootw=0 rooth=0 _x=0 _y=0 x_=0 y_=0 w=0 h=0
-IFS='x' read rootw rooth <<< "$(LC_ALL=C xwininfo -root | xwininfo_get_dimensions)"
+IFS=x read root{w,h} <<< "$(LC_ALL=C xwininfo -root | xwininfo_get_dimensions)"
 # Note: this is safe because xwininfo_get_dimensions ensures that its output is
-# either {int}x{int} or empty, a random string like "rootw" is impossible.
+# either {int}x{int} or null, a random string like "rootw" is impossible.
 if ! (( rootw && rooth )); then
-    # %d is OK even if rootw and rooth are empty, in which case they're valued 0.
+    # %d is OK even if rootw or rooth is null, in which case 0 is printed
     error 'invalid root window dimensions: %dx%d' "$rootw" "$rooth"
     exit 1
 fi
@@ -446,4 +446,4 @@ fi
 "${cast_cmd}" "${cast_args[@]}"
 set $x
 
-# vim:ts=4:sw=4:et:
+# vim:ts=4:sw=4:et:cc=80:
