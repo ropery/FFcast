@@ -401,12 +401,11 @@ case $cast_cmd in
             --display="$DISPLAY")
         ;;
     recordmydesktop)
-        x11grab_opts=(-display "$DISPLAY")
+        x11grab_opts=(-display "$DISPLAY" -width "$w" -height "$h")
         # As of recordMyDesktop 0.3.8.1, x- and y-offsets default to 0, but
         # -x and -y don't accept 0 as an argument. #FAIL
         (( _x )) && x11grab_opts+=(-x "$_x")
         (( _y )) && x11grab_opts+=(-y "$_y")
-        x11grab_opts+=(-width "$w" -height "$h")
         ;;
     *)
         error "invalid cast command: \`%s'" "$cast_cmd"
@@ -426,18 +425,13 @@ if ! shift; then
     exit 1
 fi
 
-while (( $# )); do
-    if [[ $1 == '--' ]]; then
-        cast_args+=("${x11grab_opts[@]}")
-        break
-    else
-        cast_args+=("$1")
-        shift
-    fi
+while (( $# )) && [[ $1 != '--' ]]; do
+    cast_args+=("$1")
+    shift
 done
 
 if shift; then  # got '--'
-    cast_args+=("$@")
+    cast_args+=("${x11grab_opts[@]}" "$@")
 else  # no '--', then put x11grab options at first
     cast_args=("${x11grab_opts[@]}" "${cast_args[@]}")
 fi
