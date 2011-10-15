@@ -39,7 +39,7 @@ _msg() {
     shift || return 0
     local fmt=$1
     shift || return 0
-    printf "$prefix$fmt\n" "$@"
+    printf -- "$prefix$fmt\n" "$@"
 }
 
 debug() {
