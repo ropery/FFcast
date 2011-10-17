@@ -37,7 +37,7 @@ _msg() {
     local fmt=$1
     shift || return 0
     printf '%s' "$prefix"
-    printf "$fmt\n" "$@"
+    printf -- "$fmt\n" "$@"
 }
 
 _quote_cmd_line() {
