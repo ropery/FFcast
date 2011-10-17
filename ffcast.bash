@@ -27,9 +27,6 @@ declare -a cast_cmdline=(ffmpeg -v 1 -r 25 -- -vcodec libx264 \
 declare -- cast_cmd=${cast_cmdline[0]}
 declare -- region_select_action
 declare -i borderless=1 mod16=0 print_geometry_only=0 verbosity=0
-PS4='debug: command: '  # for set -x
-x='+x'; [[ $- == *x* ]] && x='-x'  # save set -x
-readonly x
 
 #---
 # Functions
@@ -39,7 +36,28 @@ _msg() {
     shift || return 0
     local fmt=$1
     shift || return 0
-    printf -- "$prefix$fmt\n" "$@"
+    printf '%s' "$prefix"
+    printf "$fmt\n" "$@"
+}
+
+_quote_cmd_line() {
+    local prefix=$1
+    shift || return 0
+    local cmd=$1
+    shift || return 0
+    printf '%s' "$prefix"
+    printf '%q' "$cmd"
+    (( $# )) && printf ' %q' "$@"
+    printf '\n'
+}
+
+debug_dryrun() {
+    (( verbosity >=2 )) || return 0
+    _quote_cmd_line 'debug: command: ' "$@"
+} >&2
+
+debug_run() {
+    debug_dryrun "$@" && "$@"
 }
 
 debug() {
@@ -379,13 +397,11 @@ if ! (( h = mod * (h / mod) )); then
     exit 1
 fi
 
-if (( verbosity >= 1 )); then
-    if (( w < w_old )); then
-        verbose 'region: trim width from %d to %d' $w_old $w
-    fi
-    if (( h < h_old )); then
-        verbose 'region: trim height from %d to %d' $h_old $h
-    fi
+if (( w < w_old )); then
+    verbose 'region: trim width from %d to %d' $w_old $w
+fi
+if (( h < h_old )); then
+    verbose 'region: trim height from %d to %d' $h_old $h
 fi
 
 #---
@@ -440,8 +456,6 @@ else  # no '--', then put x11grab options at first
     cast_args=("${x11grab_opts[@]}" "${cast_args[@]}")
 fi
 
-(( verbosity >= 2 )) && set -x
-"${cast_cmd}" "${cast_args[@]}"
-set $x
+debug_run "${cast_cmd}" "${cast_args[@]}"
 
 # vim:ts=4:sw=4:et:cc=80:
