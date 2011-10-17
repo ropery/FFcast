@@ -216,7 +216,7 @@ Usage: ${0##*/} [arguments] [ffmpeg command]
   Arguments:
     -s           select a rectangular region by mouse
     -w           select a window by mouse click
-    -b           include borders of selected window
+    -b           include window borders hereafter
     -m           trim selected region to be mod 16
     -p           print region geometry only
     -l           list supported screencast commands
@@ -281,7 +281,7 @@ while getopts 'bhlmpqsvw' opt; do
             region_select_action+='w'
             ;;
         b)
-            borderless=0
+            region_select_action+='b'
             ;;
         p)
             print_geometry_only=1
@@ -332,6 +332,10 @@ while read -n 1; do
         'w')
             corners_list[i++]=$(select_window_get_corners)
             debug "corners: %s" "${corners_list[-1]}"
+            ;;
+        'b')
+            borderless=0
+            debug "windows: now including borders"
             ;;
     esac
 done <<< "$region_select_action"
