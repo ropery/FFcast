@@ -217,7 +217,7 @@ xwininfo_get_corners() {
         else
             continue
         fi
-        printf '%d,%d, %d,%d' $_x $_y $x_ $y_
+        printf '%d,%d %d,%d' $_x $_y $x_ $y_
         return
     done
     return 1
