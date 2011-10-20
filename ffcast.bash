@@ -21,12 +21,9 @@ shopt -s extglob
 
 readonly progname=ffcast progver='@VERSION@'
 readonly cast_cmd_pattern='@(ffmpeg|byzanz-record|recordmydesktop)'
-declare -a cast_args x11grab_opts
-declare -a cast_cmdline=(ffmpeg -v 1 -r 25 -- -vcodec libx264 \
-    "$(printf '%s-%(%Y%m%d-%H%M%S)T.mkv' "$progname" -1)")
-declare -- cast_cmd=${cast_cmdline[0]}
 declare -- region_select_action
-declare -i borderless=1 mod16=0 print_geometry_only=0 verbosity=0
+declare -i borderless=1 mod16=0 print_geometry_only=0 use_format_string=0
+declare -i verbosity=0
 
 #---
 # Functions
@@ -84,6 +81,48 @@ error() {
     (( verbosity >= -1 )) || return 0
     _msg 'error: ' "$@"
 } >&2
+
+format_to_string() {
+    local fmt=$1 str c
+    printf %s "$fmt" | {
+    while IFS= read -r -n 1 -d '' c; do
+        if [[ $c == '%' ]]; then
+            IFS= read -r -n 1 -d '' c || :
+            case $c in
+                '%')
+                    str+=%
+                    ;;
+                'd')
+                    str+=$DISPLAY
+                    ;;
+                'h')
+                    str+=$h
+                    ;;
+                'w')
+                    str+=$w
+                    ;;
+                'x')
+                    str+=$_x
+                    ;;
+                'y')
+                    str+=$_y
+                    ;;
+                'X')
+                    str+=$x_
+                    ;;
+                'Y')
+                    str+=$y_
+                    ;;
+                *)
+                    str+=%$c
+                    ;;
+            esac
+        else
+            str+=$c
+        fi
+    done
+    printf %s "$str"; }
+}
 
 list_cast_cmds() {
     local -a cmds
@@ -229,9 +268,9 @@ xwininfo_get_corners() {
 usage() {
     cat <<EOF
 $progname $progver
-Usage: ${0##*/} [arguments] [ffmpeg command]
+Usage: ${0##*/} [arguments] [[%] command line]
 
-  Arguments:
+  arguments:
     -s           select a rectangular region by mouse
     -w           select a window by mouse click
     -b           include window borders hereafter
@@ -257,12 +296,6 @@ cat <<EOF
   Any number of selections are supported, e.g., -sw is valid.
   All selected regions are combined by union.
 
-  FFmpeg command is run as given, with x11grab input options inserted,
-  either replacing the first instance of '--' or, if no '--' is given,
-  after 'ffmpeg'.  You can give any valid ffmpeg command line, e.g.,
-
-    ${0##*/} -s ffmpeg -r 25 -- -f alsa -i hw:0 -vcodec libx264 cast.mkv
-
   <geospec> is usually not used.  It is intended as a way to use external
   region selection commands.  For example,
 
@@ -274,6 +307,25 @@ cat <<EOF
                  (x2,y2) = (right,bottom) offset of the region
   - wxh+x+y      (wxh) = dimensions of the region
                  (+x+y) = (+left+top) offset of the region
+
+  The command line can be specified in either of the following two ways:
+
+  1) Specify a recognized command name after arguments.  The predefined
+  command-specific x11grab options are inserted into the command line,
+  either replacing the first instance of \`--' or, if no \`--' is found,
+  after the command name. For example,
+
+    ${0##*/} -s ffmpeg -r 25 -- -f alsa -i hw:0 -vcodec libx264 cast.mkv
+
+  2) Specify a single \`%' after arguments, followed by any command line.
+  The format strings %w, %h, %x, %y, %X, %Y are replaced with the width,
+  height, left-, top- right- and bottom-offset of the selected region,
+  respectively; %d is replaced with the DISPLAY environment variable.
+  A literal \`%' must be escaped as \`%%' where necessary. For example,
+
+    ${0##*/} -w % ${0##*/} -p %wx%h+%x+%y  # Yay for recursion ;)
+
+  If no command line is specified, a default ffmpeg command line is used.
 EOF
 fi
   exit $1
@@ -331,8 +383,11 @@ declare -- i=0
 declare -a corners_list
 
 while (( $# )); do
-    if [[ $1 == $cast_cmd_pattern ]]; then
-        cast_cmd=$1
+    if [[ $1 == '%' ]]; then
+        use_format_string=1
+        shift
+        break
+    elif [[ $1 == $cast_cmd_pattern ]]; then
         break
     fi
     # The rest are geometry specifications
@@ -405,57 +460,56 @@ if (( h < h_old )); then
 fi
 
 #---
-# Validate cast command, set up x11grab options
+# Inject selection geometry into cast command line and execute
+
+declare -- cast_cmd=$1
+declare -a cast_args
 
 if shift; then
-    cast_cmdline=("$cast_cmd" "$@")
+    if (( use_format_string )); then
+        while (( $# )); do
+            cast_args+=("$(format_to_string "$1")")
+            shift
+        done
+    else
+        declare -a x11grab_opts
+        case $cast_cmd in
+            byzanz-record)
+                x11grab_opts=(--x="$_x" --y="$_y" --width="$w" --height="$h" \
+                    --display="$DISPLAY")
+                ;;
+            ffmpeg)
+                x11grab_opts=(-f x11grab -s "${w}x$h" -i "$DISPLAY+$_x,$_y")
+                ;;
+            recordmydesktop)
+                x11grab_opts=(-display "$DISPLAY" -width "$w" -height "$h")
+                # As of recordMyDesktop 0.3.8.1, x- and y-offsets default to 0,
+                # but -x and -y don't accept 0 as an argument. #FAIL
+                (( _x )) && x11grab_opts+=(-x "$_x")
+                (( _y )) && x11grab_opts+=(-y "$_y")
+                ;;
+            *)
+                error "invalid cast command: \`%s'" "$cast_cmd"
+                exit 1
+                ;;
+        esac
+
+        while (( $# )) && [[ $1 != '--' ]]; do
+            cast_args+=("$1")
+            shift
+        done
+        if shift; then
+            cast_args+=("${x11grab_opts[@]}" "$@")
+        else
+            cast_args=("${x11grab_opts[@]}" "${cast_args[@]}")
+        fi
+    fi
+else
+    cast_cmd=ffmpeg
+    cast_args=(-r 25 -f x11grab -s "${w}x$h" -i "$DISPLAY+$_x,$_y" -vcodec
+        libx264 "$(printf '%s-%(%Y%m%d-%H%M%S)T.mkv' "$progname" -1)")
 fi
 
-# Important validation
-case $cast_cmd in
-    ffmpeg)
-        x11grab_opts=(-f x11grab -s "${w}x${h}" -i "${DISPLAY}+${_x},${_y}")
-        ;;
-    byzanz-record)
-        x11grab_opts=(--x="$_x" --y="$_y" --width="$w" --height="$h" \
-            --display="$DISPLAY")
-        ;;
-    recordmydesktop)
-        x11grab_opts=(-display "$DISPLAY" -width "$w" -height "$h")
-        # As of recordMyDesktop 0.3.8.1, x- and y-offsets default to 0, but
-        # -x and -y don't accept 0 as an argument. #FAIL
-        (( _x )) && x11grab_opts+=(-x "$_x")
-        (( _y )) && x11grab_opts+=(-y "$_y")
-        ;;
-    *)
-        error "invalid cast command: \`%s'" "$cast_cmd"
-        exit 1
-        ;;
-esac
-
-readonly cast_cmd
-
-#---
-# Insert x11grab options into cast command line.
-
-set -- "${cast_cmdline[@]}"
-
-if ! shift; then
-    error 'no cast command line specified'
-    exit 1
-fi
-
-while (( $# )) && [[ $1 != '--' ]]; do
-    cast_args+=("$1")
-    shift
-done
-
-if shift; then  # got '--'
-    cast_args+=("${x11grab_opts[@]}" "$@")
-else  # no '--', then put x11grab options at first
-    cast_args=("${x11grab_opts[@]}" "${cast_args[@]}")
-fi
-
-debug_run "${cast_cmd}" "${cast_args[@]}"
+debug_run exec "$cast_cmd" "${cast_args[@]}"
 
 # vim:ts=4:sw=4:et:cc=80:
