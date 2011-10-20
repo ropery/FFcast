@@ -366,11 +366,11 @@ if (( i )); then
     IFS=' ,' read _x _y x_ y_ <<< "$corners"
 fi
 
-if ! (( w = rootw - _x - x_ )) || (( w < 0 )); then
+if ! (( (w = rootw - _x - x_) > 0 )); then
     error 'region: invalid width: %d' "$w"
     exit 1
 fi
-if ! (( h = rooth - _y - y_ )) || (( h < 0 )); then
+if ! (( (h = rooth - _y - y_) > 0 )); then
     error 'region: invalid height: %d' "$h"
     exit 1
 fi
