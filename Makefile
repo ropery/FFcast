@@ -3,7 +3,7 @@ VERSION    = $(shell git describe)
 
 SRC        = ${wildcard *.c}
 OBJ        = ${SRC:.c=.o}
-DISTFILES  = Makefile README ffcast.bash xrectsel.c
+DISTFILES  = Makefile README.asciidoc ffcast.bash xrectsel.c
 
 PREFIX    ?= /usr
 MANPREFIX ?= ${PREFIX}/share/man
