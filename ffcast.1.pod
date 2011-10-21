@@ -1,0 +1,166 @@
+=head1 NAME
+
+ffcast - screencast an interactively selected region
+
+=head1 SYNOPSIS
+
+=over 4
+
+=item B<ffcast> [<options>] [<geospec>] B<%> [<command> [<args>]]
+
+=item B<ffcast> [<options>] [<geospec>] [<command> [<args>] [B<-->] [<args>]]
+
+=back
+
+=head1 DESCRIPTION
+
+ffcast is a thin glue between interactive region selection and command line
+tools that accept numerical geometry parameters. It makes passing geometry
+parameters to command line tools as easy as a mouse click. Screencasting
+tools are typical examples of such command line tools.
+
+Typically, ffcast prompts the user to select a screen region and injects the
+geometry parameters thereof into the arguments of I<E<lt>commandE<gt>>, and
+then executes the resultant command line.
+
+The first form is called the B<format string syntax>. Format strings in
+I<E<lt>argsE<gt>> are substituted with the corresponding geometry parameters.
+See B<L<FORMAT STRINGS|/FORMAT STRINGS>>.
+
+The second form is called the B<double hyphen syntax>. Only a limited set of
+commands are recognized. A set of geometry-related arguments specific to
+I<E<lt>commandE<gt>> are inserted in place of the first argument that is
+`B<-->', or if `B<-->' is not found, immediately after I<E<lt>commandE<gt>>.
+I<E<lt>argsE<gt>> are left as they are specified.
+
+If I<E<lt>commandE<gt>> is not given, a default B<ffmpeg> command line is
+used.
+
+=head1 OPTIONS
+
+Any of the I<E<lt>optionsE<gt>> can be repeated. They are parsed and applied
+in the order they are specified.
+
+=over 4
+
+=item B<-b>
+
+Include borders of windows to be selected.
+
+=item B<-h>
+
+Print help message, then exit. When used with B<-v>, print long help.
+
+=item B<-l>
+
+List commands recognized by the B<double hyphen syntax>, then exit.
+
+=item B<-m>
+
+Trim both dimensions of the selected region to be divisible by B<16>. By
+default, both dimensions are trimmed to be divisible by B<2>, which is
+required by B<ffmpeg>. This switch may improve video quality.
+
+=item B<-p>
+
+Print geometry of the selected region and exit without executing
+I<E<lt>commandE<gt>>. The dimensions are not trimmed.
+
+=item B<-q>
+
+Be less verbose.
+
+=item B<-s>
+
+Prompt to select a region.
+
+=item B<-v>
+
+Be more verbose.
+
+=item B<-w>
+
+Prompt to select a window.
+
+=back
+
+=head1 FORMAT STRINGS
+
+The B<format string syntax> defines the following format strings:
+
+=over 4
+
+=item B<%d>
+
+B<DISPLAY>
+
+=item B<%h>
+
+Height
+
+=item B<%w>
+
+Width
+
+=item B<%x>
+
+Left offset
+
+=item B<%y>
+
+Top offset
+
+=item B<%X>
+
+Right offset
+
+=item B<%Y>
+
+Bottom offset
+
+=item B<%%>
+
+A literal %
+
+=back
+
+=head1 GEOMETRY SPECIFICATION
+
+The I<E<lt>geospecE<gt>> specifies a geometry in one of the following forms:
+
+=over 4
+
+=item S<I<x>B<,>I<y> I<X>B<,>I<Y>>
+
+I<x>, I<y>, I<X> and I<Y> are the left, top, right and bottom offsets,
+respectively.
+
+=item I<w>B<x>I<h>B<+>I<x>B<+>I<y>
+
+I<w>, I<h>, I<x> and I<y> are the width, height and left and right offsets,
+respectively.
+
+=back
+
+=head1 ENVIRONMENT
+
+=over 4
+
+=item B<DISPLAY>
+
+To get the default host and display number.
+
+=back
+
+=head1 AUTHOR
+
+lolilolicon E<lt>lolilolicon@gmail.comE<gt>
+
+=head1 SEE ALSO
+
+B<ffmpeg(1)>
+
+=cut
+
+=for comment
+vim:ft=pod:spell:spelllang=en_us:cc=78:
