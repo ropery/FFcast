@@ -301,7 +301,7 @@ cat <<EOF
 
     ${0##*/} "\$(xrectsel '%x,%y %X,%Y')"
 
-  <geospec> must conform to one of the following syntax:
+  <geospec> must conform to one of the following syntaxes:
 
   - x1,y1 x2,y2  (x1,y1) = (left,top) offset of the region
                  (x2,y2) = (right,bottom) offset of the region
