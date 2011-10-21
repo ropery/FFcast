@@ -2,27 +2,41 @@ FFcast
 ======
 
 FFcast helps the user interactively select a screen region and hands over the
-geometry to FFmpeg for screen recording.
+geometry to an external command, such as FFmpeg, for screen recording.
 
-FFcast version 1.0 is rewritten from scratch, and incompatible with version 0.x.
+FFcast 1.0 is rewritten from scratch, and incompatible with the 0.x series.
 
 Design
 ------
 
-Imagine an "interactive" FFmpeg input file for x11grab,
+A common problem with many command line screencast tools is that there's no
+easy way to specify the screen region the user want to record.  Such tools
+require the target region geometry to be specified in numbers.  Due to the
+limitations of the human eye and brain, we can't usually translate a region
+on screen into numbers instantly or precisely.  This is where we need some
+graphic interaction.  This is where FFcast comes in.
 
-  ffmpeg <options> -f x11grab -i interactive <options>
+FFcast prompts the user to interactively select a screen region and instantly
+knows the geometry of it.  Then, FFcast replaces the placeholders in the
+screencast command line with the geometry parameters and executes it.
 
-which prompts the user to select a screen region, and then starts recording it.
+The placeholders are implemented as basic format strings.  The format strings
+%w, %h, %x, %y, %X, %Y are replaced with the width, height, left-, top- right-
+and bottom-offset of the selected region, respectively; %d is replaced with
+the DISPLAY environment variable.  A literal `%' must be escaped as `%%' where
+necessary.  The following is a basic FFmpeg command line using this syntax:
 
-FFcast is designed to do exactly this.  It's true that FFcast can be considered
-more of a FFmpeg plugin rather than a FFmpeg wrapper- it does not wrap around
-the FFmpeg options, but simply leaves them to FFmpeg.  The command line syntax
-of FFcast conforms much to this point of view:
+  ffcast [...] % ffmpeg -f x11grab -s %wx%h -i %d+%x,%y -vcodec libx264 cast.mkv
 
-  ffcast <...> ffmpeg <options> -- <options>
+There's an alternative, convenient syntax which supports a limited set of
+recognized screencast commands.  It uses `--' as the placeholder for the
+predefined command-specific, geometry-related parameters.  `ffmpeg' is one of
+the recognized commands; the command line above can be equivalently specified
+in this syntax as follows:
 
-Compare this to the hypothetical FFmpeg comand line, the mapping is obvious.
+  ffcast [...] ffmpeg -- -vcodec libx264 cast.mkv
+
+The `-l' option lists all recognized commands for this syntax.
 
 Requirements
 ------------
@@ -69,7 +83,7 @@ the selected region.
   ffcast -vvs ffmpeg -r 25 -- -f alsa -i hw:0 -vcodec libx264 cast.mkv
 
 Debug is turned on by -vv.  You will see in the debug output the FFmpeg command
-line that's called.  Notice that '--' from above is replaced with the x11grab
+line that's called.  Notice that `--' from above is replaced with the x11grab
 input options, and other options are unchanged- That's indeed what FFcast does.
 
   ffcast -ws
@@ -81,7 +95,7 @@ be very helpful for recording multi-window applications, such as the GIMP.
 
   DISPLAY=:1 ffcast
 
-FFcast, as with xwininfo and xrectsel, respects the DISPLAY environment variable.
+FFcast, like xwininfo and xrectsel, respects the DISPLAY environment variable.
 The above records the whole screen of display :1.  This is useful when you run
 a nested X server with Xephyr and want to record stuff inside its window.
 
@@ -89,11 +103,19 @@ a nested X server with Xephyr and want to record stuff inside its window.
 
 An example of using an alternative recording command, recordmydesktop (rmd).
 You will be asked to select a window, and then rmd is called to record it.
-The magic, again, is FFcast injects the -diplay, -x, -y, -width and -height
-options into the rmd command line, replacing the first occurrence of '--'.
-The '--' can also be omitted, since FFcast by default injects the geometry
+The magic, again, is FFcast injects the -display, -x, -y, -width and -height
+options into the rmd command line, replacing the first occurrence of `--'.
+The `--' can also be omitted, since FFcast by default injects the geometry
 options right after the screencast command.  Use `ffcast -l` to get a list of
 supported screencast commands.
+
+  ffcast -w % echo %wx%h+%x+%y
+
+This uses the format string syntax.  Any arbitrary command can be used in this
+syntax.  The command will print the geometry of the selected region, similar
+but not equivalent to the `-p' option; they are different in that the geometry
+parameters passed to `echo' are sanitized to be divisible by 2, which is not
+done with the `-p' option.
 
 FFcast 1.0 Changes From 0.x
 ---------------------------
@@ -116,6 +138,9 @@ the x11grab input options- currently something like this:
 
 That's it.
 
+Users switching from 0.x can safely remove the old config file, now that no
+config file is used by FFcast.
+
 Also changed is the xrectsel program.  It now supports several format strings.
 They are %x, %y, %X, %Y, %w, %h, %b and %d.  Read the source code for details.
 
@@ -131,7 +156,7 @@ screenshot application 'scrot'.  I wanted to find a way to select an arbitrary
 screen region for capture.  I went on to look at the scrot source code, as well
 as post a topic[2] asking for help.  HashBox was very kind to post his code and
 even clean it up for me- I finally combined what I got from scrot and HashBox's
-code and put togethor xrectsel.c.  All was looking good to me.
+code and put together xrectsel.c.  All was looking good to me.
 
 But obviously I was misguided to think it's a good idea to take control of all
 the irrelevant FFmpeg options and added even more (like -t).  And then people
@@ -159,7 +184,7 @@ A: Since you asked, you probably know that FFmpeg can record framebuffer,
    `ffmpeg -f fbdev -i /dev/fb0` for example.  The thing is FFmpeg's framebuffer
    recording is very primitive- it does not support region selection of any
    kind, just the whole screen.  Even if it did, we wouldn't be able to do the
-   same kind of interative selection as in X.  Due to these limitations and
+   same kind of interactive selection as in X.  Due to these limitations and
    the goal of FFcast, the user is better off using FFmpeg directly.
    I also recommend 'ttyrec' for your tty recording needs.
 
@@ -176,3 +201,7 @@ A: Probably it shouldn't.  In many cases, the right solution is to wrap around
    FFcast/FFmpeg a quick and dirty specialized script- especially regarding
    encoding options.  By design, FFcast is basically FFmpeg with an interactive
    selection plugin and probably shouldn't do your foo-bar-baz.
+
+/////
+vim:ts=2:sw=2:syntax=asciidoc:et:spell:spelllang=en_us:cc=80:
+////
