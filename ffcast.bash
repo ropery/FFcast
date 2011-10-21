@@ -332,7 +332,7 @@ fi
 }
 
 OPTIND=1
-while getopts 'bhlmpqsvw' opt; do
+while getopts ':bhlmpqsvw' opt; do
     case $opt in 
         h)
             usage 0
@@ -361,6 +361,14 @@ while getopts 'bhlmpqsvw' opt; do
             ;;
         v)
             (( verbosity++ )) || :
+            ;;
+        '?')
+            error "invalid option: \`%s'" "$OPTARG"
+            exit 1
+            ;;
+        ':')
+            error "option requires an argument: \`%s'" "$OPTARG"
+            exit 1
             ;;
     esac
 done
