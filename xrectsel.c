@@ -7,6 +7,8 @@
 #include <X11/Xlib.h>
 #include <X11/cursorfont.h>
 
+#define die(args...) do {error(args); exit(EXIT_FAILURE); } while(0)
+
 typedef struct Region Region;
 struct Region {
   Window root;
@@ -20,7 +22,6 @@ struct Region {
   unsigned int d; /* depth */
 };
 
-static void die(const char *errstr, ...);
 static void error(const char *errstr, ...);
 static int print_region_attr(const char *fmt, Region region);
 static int select_region(Display *dpy, Window root, Region *region);
@@ -51,17 +52,6 @@ int main(int argc, const char *argv[])
 
   XCloseDisplay(dpy);
   return EXIT_SUCCESS;
-}
-
-static void die(const char *errstr, ...)
-{
-  va_list ap;
-
-  fprintf(stderr, "xrectsel: ");
-  va_start(ap, errstr);
-  vfprintf(stderr, errstr, ap);
-  va_end(ap);
-  exit(EXIT_FAILURE);
 }
 
 static void error(const char *errstr, ...)
