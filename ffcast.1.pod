@@ -142,15 +142,21 @@ respectively.
 
 =back
 
-=head1 ENVIRONMENT
+=head1 EXAMPLES
 
-=over 4
+Use the recognized command B<ffmpeg> in the B<double hyphen syntax>, with
+debug messages printed to stderr:
 
-=item B<DISPLAY>
+    ffcast -vvs ffmpeg -r 30 -- -vcodec libx264 out.mkv
 
-To get the default host and display number.
+Screencast fullscreen on display I<:1>, using the default B<ffmpeg> command
+line:
 
-=back
+    DISPLAY=:1 ffcast
+
+Screencast all three windows of B<GIMP>:
+
+    ffcast -www % ffmpeg -f x11grab -show_region 1 -s %wx%h -i %d+%x,%y out.mpg
 
 =head1 AUTHOR
 
@@ -158,7 +164,7 @@ lolilolicon E<lt>lolilolicon@gmail.comE<gt>
 
 =head1 SEE ALSO
 
-B<ffmpeg(1)>
+B<ffmpeg(1)>, B<X(7)>
 
 =cut
 
