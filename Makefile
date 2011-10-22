@@ -28,14 +28,14 @@ strip: ${OUT}
 install: ffcast.1 ffcast.bash xrectsel
 	install -D -m755 xrectsel ${DESTDIR}${PREFIX}/bin/xrectsel
 	install -D -m755 ffcast.bash ${DESTDIR}${PREFIX}/bin/ffcast
-	install -D -m755 ffcast.1 ${DESTDIR}${PREFIX}/man1/ffcast.1
+	install -D -m755 ffcast.1 ${DESTDIR}${MANPREFIX}/man1/ffcast.1
 
 uninstall:
 	@echo removing executable file from ${DESTDIR}${PREFIX}/bin
 	rm -f ${DESTDIR}${PREFIX}/bin/xrectsel
 	rm -f ${DESTDIR}${PREFIX}/bin/ffcast
-	@echo removing man page from ${DESTDIR}${PREFIX}/man1/ffcast.1
-	rm -f ${DESTDIR}${PREFIX}/man1/ffcast.1
+	@echo removing man page from ${DESTDIR}${MANPREFIX}/man1/ffcast.1
+	rm -f ${DESTDIR}${MANPREFIX}/man1/ffcast.1
 
 dist: clean
 	mkdir ffcast-${VERSION}
