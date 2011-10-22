@@ -268,66 +268,24 @@ xwininfo_get_corners() {
 usage() {
     cat <<EOF
 $progname $progver
-Usage: ${0##*/} [arguments] [[%] command line]
+Usage:
+  ${0##*/} [options] [<geospec>] % [command [args]]
+  ${0##*/} [options] [<geospec>] [command [args] [--] [args]]
 
-  arguments:
+  Options:
     -s           select a rectangular region by mouse
     -w           select a window by mouse click
     -b           include window borders hereafter
     -m           trim selected region to be mod 16
     -p           print region geometry only
-    -l           list supported screencast commands
+    -l           list recognized screencast commands
     -q           less verbose
     -v           more verbose
     -h           print this help and exit
-    <geospec>    geometry specification
 
   If no region-selecting argument is passed, select fullscreen.
-  All the arguments can be repeated, and are processed in order.
-  For example, -vv is more verbose than -v.
+  All the options can be repeated, and are processed in order.
 EOF
-if (( verbosity < 1 )); then
-cat <<EOF
-
-  Use \`${0##*/} -vh' for detailed help.
-EOF
-else
-cat <<EOF
-  Any number of selections are supported, e.g., -sw is valid.
-  All selected regions are combined by union.
-
-  <geospec> is usually not used.  It is intended as a way to use external
-  region selection commands.  For example,
-
-    ${0##*/} "\$(xrectsel '%x,%y %X,%Y')"
-
-  <geospec> must conform to one of the following syntaxes:
-
-  - x1,y1 x2,y2  (x1,y1) = (left,top) offset of the region
-                 (x2,y2) = (right,bottom) offset of the region
-  - wxh+x+y      (wxh) = dimensions of the region
-                 (+x+y) = (+left+top) offset of the region
-
-  The command line can be specified in either of the following two ways:
-
-  1) Specify a recognized command name after arguments.  The predefined
-  command-specific x11grab options are inserted into the command line,
-  either replacing the first instance of \`--' or, if no \`--' is found,
-  after the command name. For example,
-
-    ${0##*/} -s ffmpeg -r 25 -- -f alsa -i hw:0 -vcodec libx264 cast.mkv
-
-  2) Specify a single \`%' after arguments, followed by any command line.
-  The format strings %w, %h, %x, %y, %X, %Y are replaced with the width,
-  height, left-, top- right- and bottom-offset of the selected region,
-  respectively; %d is replaced with the DISPLAY environment variable.
-  A literal \`%' must be escaped as \`%%' where necessary. For example,
-
-    ${0##*/} -w % ${0##*/} -p %wx%h+%x+%y  # Yay for recursion ;)
-
-  If no command line is specified, a default ffmpeg command line is used.
-EOF
-fi
   exit $1
 }
 
