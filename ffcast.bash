@@ -21,8 +21,8 @@ shopt -s extglob
 
 readonly progname=ffcast progver='@VERSION@'
 readonly cast_cmd_pattern='@(ffmpeg|byzanz-record|recordmydesktop)'
-declare -- region_select_action
-declare -i borderless=1 mod16=0 print_geometry_only=0 use_format_string=0
+declare -- modulus=2 region_select_action
+declare -i borderless=1 print_geometry_only=0 use_format_string=0
 declare -i verbosity=0
 
 #---
@@ -276,11 +276,11 @@ Usage:
     -s           select a rectangular region by mouse
     -w           select a window by mouse click
     -b           include window borders hereafter
-    -m           trim selected region to be mod 16
+    -m <n>       trim region to be divisible by n
     -p           print region geometry only
     -l           list recognized screencast commands
-    -q           less verbose
-    -v           more verbose
+    -q           be less verbose
+    -v           be more verbose
     -h           print this help and exit
 
   If no region-selecting argument is passed, select fullscreen.
@@ -290,7 +290,7 @@ EOF
 }
 
 OPTIND=1
-while getopts ':bhlmpqsvw' opt; do
+while getopts ':bhlm:pqsvw' opt; do
     case $opt in 
         h)
             usage 0
@@ -300,7 +300,12 @@ while getopts ':bhlmpqsvw' opt; do
             exit
             ;;
         m)
-            mod16=1
+            if [[ $OPTARG == [1-9]*([0-9]) ]]; then
+                modulus=$OPTARG
+            else
+                error "invalid modulus: \`%s'" "$OPTARG"
+                exit 1
+            fi
             ;;
         s)
             region_select_action+='s'
@@ -401,28 +406,30 @@ if (( print_geometry_only )); then
     exit
 fi
 
-# x264 requires frame size divisible by 2, mod 16 is said to be optimal.
-# Adapt by reducing- expanding could exceed screen edges, and would not
-# be much beneficial anyway.
-(( mod = mod16 ? 16 : 2 ))
+#---
+# Post-process region geometry
 
-w_old=$w
-h_old=$h
+if (( modulus > 1 )); then
+    w_old=$w
+    h_old=$h
 
-if ! (( w = mod * (w / mod) )); then
-    error 'region: width too small for mod%d: %d' $mod $w_old
-    exit 1
-fi
-if ! (( h = mod * (h / mod) )); then
-    error 'region: height too small for mod%d: %d' $mod $h_old
-    exit 1
-fi
+    if ! (( w = modulus * (w / modulus) )); then
+        error 'region: width too small for modulus %d: %d' $modulus $w_old
+        exit 1
+    fi
+    if ! (( h = modulus * (h / modulus) )); then
+        error 'region: height too small for modulus %d: %d' $modulus $h_old
+        exit 1
+    fi
 
-if (( w < w_old )); then
-    verbose 'region: trim width from %d to %d' $w_old $w
-fi
-if (( h < h_old )); then
-    verbose 'region: trim height from %d to %d' $h_old $h
+    if (( w < w_old )); then
+        verbose 'region: trim width from %d to %d' $w_old $w
+        (( x_ += w_old - w ))
+    fi
+    if (( h < h_old )); then
+        verbose 'region: trim height from %d to %d' $h_old $h
+        (( y_ += h_old - h ))
+    fi
 fi
 
 #---

@@ -55,11 +55,12 @@ Print help message, then exit.
 
 List commands recognized by the B<double hyphen syntax>, then exit.
 
-=item B<-m>
+=item B<-m> I<E<lt>nE<gt>>
 
-Trim both dimensions of the selected region to be divisible by B<16>. By
-default, both dimensions are trimmed to be divisible by B<2>, which is
-required by B<ffmpeg>. This switch may improve video quality.
+Trim both dimensions of the region to be divisible by I<E<lt>nE<gt>>. By
+default, both dimensions are trimmed to be divisible by C<2>, which is
+required by B<x264>. A value of C<16> may help when encoding to most video
+codecs. A value of C<1> disables trimming.
 
 =item B<-p>
 
@@ -149,7 +150,7 @@ debug messages printed to stderr:
 
     ffcast -vvs ffmpeg -r 30 -- -vcodec libx264 out.mkv
 
-Screencast fullscreen on display I<:1>, using the default B<ffmpeg> command
+Screencast fullscreen on display C<:1>, using the default B<ffmpeg> command
 line:
 
     DISPLAY=:1 ffcast
@@ -166,7 +167,7 @@ lolilolicon E<lt>lolilolicon@gmail.comE<gt>
 
 B<ffmpeg(1)>, B<X(7)>
 
-=cut
-
 =for comment
 vim:ft=pod:spell:spelllang=en_us:cc=78:
+
+=cut
