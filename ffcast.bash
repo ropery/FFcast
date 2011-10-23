@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-set -e
-shopt -s extglob
+set -e +m -o pipefail
+shopt -s extglob lastpipe
 
 readonly progname=ffcast progver='@VERSION@'
 readonly cast_cmd_pattern='@(ffmpeg|byzanz-record|recordmydesktop)'
@@ -56,6 +56,14 @@ debug_dryrun() {
 debug_run() {
     debug_dryrun "$@" && "$@"
 }
+
+debug_pipestatus() {
+    set -- "${PIPESTATUS[@]}"
+    (( verbosity >=2 )) || return 0
+    printf 'debug: pipestatus:'
+    (( $# )) && printf ' %d' "$@"
+    printf '\n'
+} >&2
 
 debug() {
     (( verbosity >= 2 )) || return 0
@@ -152,7 +160,7 @@ parse_geospec_get_corners() {
             return 1
             ;;
     esac
-    printf '%d,%d %d,%d' $_x $_y $x_ $y_
+    printf '%d,%d %d,%d\n' $_x $_y $x_ $y_
 }
 
 region_intersect_corners() {
@@ -169,7 +177,7 @@ region_intersect_corners() {
         (( X_ = x_ > X_ ? x_ : X_ )) || :
         (( Y_ = y_ > Y_ ? y_ : Y_ )) || :
     done
-    printf '%d,%d %d,%d' $_X $_Y $X_ $Y_
+    printf '%d,%d %d,%d\n' $_X $_Y $X_ $Y_
 }
 
 region_union_corners() {
@@ -186,7 +194,7 @@ region_union_corners() {
         (( X_ = x_ < X_ ? x_ : X_ )) || :
         (( Y_ = y_ < Y_ ? y_ : Y_ )) || :
     done
-    printf '%d,%d %d,%d' $_X $_Y $X_ $Y_
+    printf '%d,%d %d,%d\n' $_X $_Y $X_ $Y_
 }
 
 select_region_get_corners() {
@@ -202,7 +210,7 @@ select_window_get_corners() {
 # stdout: x1,y1 x2,y2
 xrectsel_get_corners() {
     # Note: requires xrectsel 0.3
-    xrectsel "%x,%y %X,%Y"
+    xrectsel "%x,%y %X,%Y"$'\n'
 }
 
 # stdin: xwininfo output (locale: C)
@@ -219,7 +227,7 @@ xwininfo_get_dimensions() {
             continue
         fi
         if (( w && h )); then
-            printf '%dx%d' $w $h
+            printf '%dx%d\n' $w $h
             return
         fi
     done
@@ -256,7 +264,7 @@ xwininfo_get_corners() {
         else
             continue
         fi
-        printf '%d,%d %d,%d' $_x $_y $x_ $y_
+        printf '%d,%d %d,%d\n' $_x $_y $x_ $y_
         return
     done
     return 1
@@ -341,11 +349,15 @@ shift $(( OPTIND -1 ))
 # Process region geometry
 
 declare rootw=0 rooth=0 _x=0 _y=0 x_=0 y_=0 w=0 h=0
-IFS=x read root{w,h} <<< "$(LC_ALL=C xwininfo -root | xwininfo_get_dimensions)"
+if ! LC_ALL=C xwininfo -root | xwininfo_get_dimensions |
+    IFS=x read rootw rooth; then
+    debug_pipestatus
+    error 'failed to get root window dimensions'
+    exit 1
+fi
 # Note: this is safe because xwininfo_get_dimensions ensures that its output is
 # either {int}x{int} or null, a random string like "rootw" is impossible.
 if ! (( rootw && rooth )); then
-    # %d is OK even if rootw or rooth is null, in which case 0 is printed
     error 'invalid root window dimensions: %dx%d' "$rootw" "$rooth"
     exit 1
 fi
@@ -367,6 +379,7 @@ while (( $# )); do
     shift
 done
 
+printf %s "$region_select_action" |
 while read -n 1; do
     case $REPLY in
         's')
@@ -379,10 +392,10 @@ while read -n 1; do
             ;;
         'b')
             borderless=0
-            debug "windows: now including borders"
+            verbose "windows: now including borders"
             ;;
     esac
-done <<< "$region_select_action"
+done
 
 if (( i )); then
     corners=$(region_union_corners "${corners_list[@]}")
