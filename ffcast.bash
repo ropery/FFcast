@@ -21,7 +21,8 @@ shopt -s extglob lastpipe
 
 readonly progname=ffcast progver='@VERSION@'
 readonly cast_cmd_pattern='@(ffmpeg|byzanz-record|recordmydesktop)'
-declare -- modulus=2 region_select_action
+declare -a head_ids=()
+declare -- modulus=2 region_select_action=
 declare -i borderless=1 print_geometry_only=0 use_format_string=0
 declare -i verbosity=0
 
@@ -132,6 +133,29 @@ format_to_string() {
     printf %s "$str"; }
 }
 
+# $1: array variable to assign corners list to, i.e. =([id]=corners ...)
+# $2: array variable of heads, e.g. =([0]=1440x900+0+124 [1]=1280x1024+1440+0)
+# $3: array variable of head IDs, e.g. =(0 1) (optional)
+heads_get_corners_list_by_ref() {
+    eval local heads=\(\"\$\{$2\[@\]\}\"\)
+    if [[ -n $3 ]]; then
+        eval local head_ids=\(\"\$\{$3\[@\]\}\"\)
+    else
+        local head_ids=("${!heads[@]}")
+    fi
+    local i w h _x _y x_ y_
+    for i in "${head_ids[@]}"; do
+        if [[ -n ${heads[i]} ]]; then
+            IFS='x+' read w h _x _y <<< "${heads[i]}"
+            (( x_ = rootw - _x - w )) || :
+            (( y_ = rooth - _y - h )) || :
+            printf -v "$1[$i]" "%d,%d %d,%d" $_x $_y $x_ $y_
+        else
+            warn "head #%d does not exist in head list \`%s'" "$i" "$2"
+        fi
+    done
+}
+
 list_cast_cmds() {
     local -a cmds
     IFS='|' read -a cmds <<< "${cast_cmd_pattern:2: -1}"
@@ -205,6 +229,28 @@ select_region_get_corners() {
 select_window_get_corners() {
     msg "%s" "please click once in target window"
     LC_ALL=C xwininfo | xwininfo_get_corners
+}
+
+# stdin: xdpyinfo -ext XINERAMA (preferably sanitized)
+# $1: array variable to assign heads to, i.e. =([id]=geometry ...)
+xdpyinfo_get_heads_by_ref() {
+    local line
+    local i w h x y
+    local n='+([0-9])'
+    # See print_xinerama_info() in xdpyinfo.c
+    local head="head #$n: ${n}x$n @ $n,$n"
+    while IFS=' ' read -r line; do
+        if [[ $line == $head ]]; then
+            line=${line#head #}
+            IFS=' :x@,' read i w h x y <<< "$line"
+            printf -v "$1[$i]" "%dx%d+%d+%d" $w $h $x $y
+        fi
+    done
+    [[ -n $i ]]
+}
+
+xdpyinfo_list_heads() {
+    xdpyinfo -ext XINERAMA | grep '^  head #' | sed 's/^ *//'
 }
 
 # stdout: x1,y1 x2,y2
@@ -283,6 +329,7 @@ Usage:
   Options:
     -s           select a rectangular region by mouse
     -w           select a window by mouse click
+    -x <n|list>  select the Xinerama head of id n
     -b           include window borders hereafter
     -m <n>       trim region to be divisible by n
     -p           print region geometry only
@@ -298,7 +345,7 @@ EOF
 }
 
 OPTIND=1
-while getopts ':bhlm:pqsvw' opt; do
+while getopts ':bhlm:pqsvwx:' opt; do
     case $opt in 
         h)
             usage 0
@@ -320,6 +367,22 @@ while getopts ':bhlm:pqsvw' opt; do
             ;;
         w)
             region_select_action+='w'
+            ;;
+        x)
+            if [[ $OPTARG == 'list' ]]; then
+                xdpyinfo_list_heads
+                exit
+            fi
+            IFS=' ,' read -a _head_ids <<< "$OPTARG"
+            for i in "${_head_ids[@]}"; do
+                if [[ $i != +([0-9]) ]]; then
+                    error "invalid head IDs: \'%s'" "$OPTARG"
+                    exit 1
+                fi
+                (( i = 10#$i )) || :
+                # Note: use i as key to discard duplicates
+                head_ids[i]=$i
+            done
             ;;
         b)
             region_select_action+='b'
@@ -363,7 +426,23 @@ if ! (( rootw && rooth )); then
 fi
 
 declare -- i=0
-declare -a corners_list
+declare -a corners_list=() heads=()
+
+if (( ${#head_ids[@]} )); then
+    if ! xdpyinfo_list_heads | xdpyinfo_get_heads_by_ref heads; then
+        error 'failed to get head list'
+        exit 1
+    fi
+    debug '%s' "$(declare -p heads)"
+    heads_get_corners_list_by_ref corners_list heads head_ids
+    debug '%s' "$(declare -p corners_list)"
+    i=${#corners_list[@]}
+    if (( ! i )); then
+        error 'none of the specified head IDs exists'
+        exit 1
+    fi
+    corners_list=("${corners_list[@]}")  # indexing
+fi
 
 while (( $# )); do
     if [[ $1 == '%' ]]; then

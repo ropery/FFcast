@@ -83,6 +83,12 @@ Be more verbose.
 
 Prompt to select a window.
 
+=item B<-x> I<E<lt>nE<gt>>
+
+Select a B<Xinerama> head of ID I<E<lt>nE<gt>>. Multiple heads can be
+specified either as a comma-separate list, or by repeating this option. Use
+C<list> to get a list of head IDs and the corresponding geometry parameters.
+
 =back
 
 =head1 FORMAT STRINGS
