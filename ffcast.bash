@@ -135,14 +135,11 @@ format_to_string() {
 
 # $1: array variable to assign corners list to, i.e. =([id]=corners ...)
 # $2: array variable of heads, e.g. =([0]=1440x900+0+124 [1]=1280x1024+1440+0)
-# $3: array variable of head IDs, e.g. =(0 1) (optional)
+# $3: array variable of head IDs, e.g. =(0 1 2)
+# $4: array variable to assign bad head IDs to, e.g. =(2)
 heads_get_corners_list_by_ref() {
     eval local heads=\(\"\$\{$2\[@\]\}\"\)
-    if [[ -n $3 ]]; then
-        eval local head_ids=\(\"\$\{$3\[@\]\}\"\)
-    else
-        local head_ids=("${!heads[@]}")
-    fi
+    eval local head_ids=\(\"\$\{$3\[@\]\}\"\)
     local i w h _x _y x_ y_
     for i in "${head_ids[@]}"; do
         if [[ -n ${heads[i]} ]]; then
@@ -151,7 +148,7 @@ heads_get_corners_list_by_ref() {
             (( y_ = rooth - _y - h )) || :
             printf -v "$1[$i]" "%d,%d %d,%d" $_x $_y $x_ $y_
         else
-            warn "head #%d does not exist in head list \`%s'" "$i" "$2"
+            printf -v "$4[$i]" %d $i
         fi
     done
 }
@@ -426,7 +423,7 @@ if ! (( rootw && rooth )); then
 fi
 
 declare -- i=0
-declare -a corners_list=() heads=()
+declare -a corners_list=() heads=() head_ids_bad=()
 
 if (( ${#head_ids[@]} )); then
     if ! xdpyinfo_list_heads | xdpyinfo_get_heads_by_ref heads; then
@@ -434,12 +431,15 @@ if (( ${#head_ids[@]} )); then
         exit 1
     fi
     debug '%s' "$(declare -p heads)"
-    heads_get_corners_list_by_ref corners_list heads head_ids
+    heads_get_corners_list_by_ref corners_list heads head_ids head_ids_bad
     debug '%s' "$(declare -p corners_list)"
     i=${#corners_list[@]}
     if (( ! i )); then
         error 'none of the specified head IDs exists'
         exit 1
+    fi
+    if (( ${#head_ids_bad[@]} )); then
+        warn "ignored non-existent head ids: %s" "${head_ids_bad[*]}"
     fi
     corners_list=("${corners_list[@]}")  # indexing
 fi
