@@ -1,1 +1,7 @@
 /release/
+/TODO
+/ffcast
+/ffcast.1
+/xrectsel
+*.o
+*~
