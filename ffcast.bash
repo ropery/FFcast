@@ -93,44 +93,26 @@ error() {
 
 format_to_string() {
     local fmt=$1 str c
-    printf %s "$fmt" | {
+    printf %s "$fmt" |
     while IFS= read -r -n 1 -d '' c; do
         if [[ $c == '%' ]]; then
             IFS= read -r -n 1 -d '' c || :
             case $c in
-                '%')
-                    str+=%
-                    ;;
-                'd')
-                    str+=$DISPLAY
-                    ;;
-                'h')
-                    str+=$h
-                    ;;
-                'w')
-                    str+=$w
-                    ;;
-                'x')
-                    str+=$_x
-                    ;;
-                'y')
-                    str+=$_y
-                    ;;
-                'X')
-                    str+=$x_
-                    ;;
-                'Y')
-                    str+=$y_
-                    ;;
-                *)
-                    str+=%$c
-                    ;;
+                '%') str+=%;;
+                'd') str+=$DISPLAY;;
+                'h') str+=$h;;
+                'w') str+=$w;;
+                'x') str+=$_x;;
+                'y') str+=$_y;;
+                'X') str+=$x_;;
+                'Y') str+=$y_;;
+                *) str+=%$c;;
             esac
         else
             str+=$c
         fi
     done
-    printf %s "$str"; }
+    printf %s "$str";
 }
 
 # $1: array variable to assign corners list to, i.e. =([id]=corners ...)
