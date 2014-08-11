@@ -18,6 +18,7 @@
 
 set -e +m -o pipefail
 shopt -s extglob lastpipe
+trap -- 'trap_err $LINENO' ERR
 
 readonly progname=ffcast progver='@VERSION@'
 readonly cast_cmd_pattern='@(ffmpeg|byzanz-record|recordmydesktop)'
@@ -28,6 +29,14 @@ declare -i verbosity=0
 
 #---
 # Functions
+
+trap_err() {
+    set -- "$1" "${PIPESTATUS[@]}"
+    printf '%s:%d: ERR:' "${BASH_SOURCE[0]}" "$1"; shift
+    printf ' PIPESTATUS:'
+    printf ' %d' "$@"
+    printf '  BASH_COMMAND: %s\n' "$BASH_COMMAND"
+} >&2
 
 _msg() {
     local prefix=$1
@@ -57,14 +66,6 @@ debug_dryrun() {
 debug_run() {
     debug_dryrun "$@" && "$@"
 }
-
-debug_pipestatus() {
-    set -- "${PIPESTATUS[@]}"
-    (( verbosity >=2 )) || return 0
-    printf 'debug: pipestatus:'
-    (( $# )) && printf ' %d' "$@"
-    printf '\n'
-} >&2
 
 debug() {
     (( verbosity >= 2 )) || return 0
@@ -407,12 +408,8 @@ shift $(( OPTIND -1 ))
 # Process region geometry
 
 declare rootw=0 rooth=0 _x=0 _y=0 x_=0 y_=0 w=0 h=0
-if ! LC_ALL=C xwininfo -root | xwininfo_get_dimensions |
-    IFS=x read rootw rooth; then
-    debug_pipestatus
-    error 'failed to get root window dimensions'
-    exit 1
-fi
+LC_ALL=C xwininfo -root | xwininfo_get_dimensions | IFS=x read rootw rooth
+
 # Note: this is safe because xwininfo_get_dimensions ensures that its output is
 # either {int}x{int} or null, a random string like "rootw" is impossible.
 if ! (( rootw && rooth )); then
