@@ -47,6 +47,10 @@ in the order they are specified.
 
 Include borders of windows to be selected.
 
+=item B<-f>
+
+Include window manager frame of windows to be selected.
+
 =item B<-h>
 
 Print help message, then exit.
@@ -163,7 +167,12 @@ line:
 
 Screencast all three windows of B<GIMP>:
 
-    ffcast -www % ffmpeg -f x11grab -show_region 1 -s %wx%h -i %d+%x,%y out.mpg
+    ffcast -www % ffmpeg -f x11grab -show_region 1 -s %wx%h -i %d+%x,%y out.mp4
+
+Take a screenshot of a window including its window manager frame (almost
+equivalent to C<import -frame>):
+
+    ffcast -qfw ffmpeg -loglevel quiet -- -frames:v 1 win.png
 
 =head1 AUTHOR
 

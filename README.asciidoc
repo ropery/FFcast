@@ -51,6 +51,7 @@ Requirements
   * Bash 4.2
   * FFmpeg
   * xdpyinfo - for the -x option
+  * xprop    - for the -f option
   * xrectsel - for the -s option (included)
   * xwininfo - for the -w option
 

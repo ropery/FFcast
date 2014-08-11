@@ -23,7 +23,7 @@ readonly progname=ffcast progver='@VERSION@'
 readonly cast_cmd_pattern='@(ffmpeg|byzanz-record|recordmydesktop)'
 declare -a head_ids=()
 declare -- modulus=2 region_select_action=
-declare -i borderless=1 print_geometry_only=0 use_format_string=0
+declare -i borders=0 frame=0 print_geometry_only=0 use_format_string=0
 declare -i verbosity=0
 
 #---
@@ -250,6 +250,13 @@ xdpyinfo_list_heads() {
     xdpyinfo -ext XINERAMA | grep '^  head #' | sed 's/^ *//'
 }
 
+# stdout: left, right, top, bottom
+# $1: window id
+xprop_get_frame_extents() {
+    xprop -id "$1" -notype _NET_FRAME_EXTENTS |
+    grep '^_NET_FRAME_EXTENTS = ' | sed 's/.*= //'
+}
+
 # stdout: x1,y1 x2,y2
 xrectsel_get_corners() {
     # Note: requires xrectsel 0.3
@@ -282,35 +289,40 @@ xwininfo_get_dimensions() {
 xwininfo_get_corners() {
     local line
     local _x _y x_ y_ b
+    local fl fr ft fb id
     local n='-?[0-9]+'
     local corners="^Corners: *\\+($n)\\+($n) *-$n\\+$n *-($n)-($n) *\\+$n-$n\$"
+    local window_id="^xwininfo: Window id: (0x[[:xdigit:]]+)"
     # Note: explicitly set IFS to ensure stripping of whitespaces
-    while IFS=$' \t' read -r line; do
-        if [[ $line == 'Border width: '+([0-9]) ]]; then
+    while IFS=$' \t' read -r line && [[ -z $id || -z $_x || -z $b ]]; do
+        if [[ $line =~ $window_id ]]; then
+            id=${BASH_REMATCH[1]}
+        elif [[ $line == 'Border width: '+([0-9]) ]]; then
             b=${line#'Border width: '}
         elif [[ $line =~ $corners ]]; then
             _x=${BASH_REMATCH[1]}
             _y=${BASH_REMATCH[2]}
             x_=${BASH_REMATCH[3]}
             y_=${BASH_REMATCH[4]}
-        else
-            continue
         fi
-        [[ -n $_x ]] || continue
-        if  (( ! borderless )); then
-            :
-        elif [[ -n $b ]]; then
+    done
+    [[ -n $id && -n $_x && -n $b ]] || return 1
+    if (( frame )); then
+        if ! xprop_get_frame_extents "$id" | IFS=' ,' read fl fr ft fb; then
+            warn "unable to determine frame extents for window %s" "$id"
+        else
+            (( _x -= fl )) || :
+            (( _y -= ft )) || :
+            (( x_ -= fr )) || :
+            (( y_ -= fb )) || :
+        fi
+    elif (( ! borders )); then
             (( _x += b )) || :
             (( _y += b )) || :
             (( x_ += b )) || :
             (( y_ += b )) || :
-        else
-            continue
-        fi
-        printf '%d,%d %d,%d\n' $_x $_y $x_ $y_
-        return
-    done
-    return 1
+    fi
+    printf '%d,%d %d,%d\n' $_x $_y $x_ $y_
 }
 
 #---
@@ -328,6 +340,7 @@ Usage:
     -w           select a window by mouse click
     -x <n|list>  select the Xinerama head of id n
     -b           include window borders hereafter
+    -f           include window frame hereafter
     -m <n>       trim region to be divisible by n
     -p           print region geometry only
     -l           list recognized screencast commands
@@ -342,8 +355,8 @@ EOF
 }
 
 OPTIND=1
-while getopts ':bhlm:pqsvwx:' opt; do
-    case $opt in 
+while getopts ':bfhlm:pqsvwx:' opt; do
+    case $opt in
         h)
             usage 0
             ;;
@@ -383,6 +396,9 @@ while getopts ':bhlm:pqsvwx:' opt; do
             ;;
         b)
             region_select_action+='b'
+            ;;
+        f)
+            region_select_action+='f'
             ;;
         p)
             print_geometry_only=1
@@ -470,8 +486,12 @@ while read -n 1; do
             debug "corners: %s" "${corners_list[-1]}"
             ;;
         'b')
-            borderless=0
+            borders=1
             verbose "windows: now including borders"
+            ;;
+        'f')
+            frame=1
+            verbose "windows: now including window manager frame"
             ;;
     esac
 done
