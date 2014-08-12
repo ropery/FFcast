@@ -6,9 +6,7 @@ ffcast - screencast an interactively selected region
 
 =over 4
 
-=item B<ffcast> [<options>] [<geospec>] B<%> [<command> [<args>]]
-
-=item B<ffcast> [<options>] [<geospec>] [<command> [<args>] [B<-->] [<args>]]
+=item B<ffcast> [<options>] [<command> [<args>]]
 
 =back
 
@@ -23,18 +21,17 @@ Typically, ffcast prompts the user to select a screen region and injects the
 geometry parameters thereof into the arguments of I<E<lt>commandE<gt>>, and
 then executes the resultant command line.
 
-The first form is called the B<format string syntax>. Format strings in
-I<E<lt>argsE<gt>> are substituted with the corresponding geometry parameters.
+ffcast maintains an internal list of predefined B<sub-commands>. If
+I<E<lt>commandE<gt>> matches one of them, predefined actions associated with
+the matching sub-command is performed; otherwise, I<E<lt>commandE<gt>> is
+executed as an external command. The B<%> sub-command can be used to prevent
+I<E<lt>commandE<gt>> from being executed as a sub-command, in the case of name
+conflicts.
+
+All I<E<lt>argsE<gt>> are subject to format string substitution.
 See B<L<FORMAT STRINGS|/FORMAT STRINGS>>.
 
-The second form is called the B<double hyphen syntax>. Only a limited set of
-commands are recognized. A set of geometry-related arguments specific to
-I<E<lt>commandE<gt>> are inserted in place of the first argument that is
-`B<-->', or if `B<-->' is not found, immediately after I<E<lt>commandE<gt>>.
-I<E<lt>argsE<gt>> are left as they are specified.
-
-If I<E<lt>commandE<gt>> is not given, a default B<ffmpeg> command line is
-used.
+If no I<E<lt>commandE<gt>> is given, a default B<ffmpeg> command line is used.
 
 =head1 OPTIONS
 
@@ -51,13 +48,18 @@ Include borders of windows to be selected.
 
 Include window manager frame of windows to be selected.
 
+=item B<-g> I<E<lt>geospecE<gt>>
+
+Specify a selection in I<E<lt>geospecE<gt>>.
+See B<L<GEOMETRY SPECIFICATION|/GEOMETRY SPECIFICATION>>.
+
 =item B<-h>
 
 Print help message, then exit.
 
 =item B<-l>
 
-List commands recognized by the B<double hyphen syntax>, then exit.
+List predefined sub-commands with brief description, then exit.
 
 =item B<-m> I<E<lt>nE<gt>>
 
@@ -97,7 +99,7 @@ C<list> to get a list of head IDs and the corresponding geometry parameters.
 
 =head1 FORMAT STRINGS
 
-The B<format string syntax> defines the following format strings:
+The following format strings are supported:
 
 =over 4
 
@@ -137,7 +139,7 @@ A literal %
 
 =head1 GEOMETRY SPECIFICATION
 
-The I<E<lt>geospecE<gt>> specifies a geometry in one of the following forms:
+A I<E<lt>geospecE<gt>> specifies a geometry in one of the following forms:
 
 =over 4
 
@@ -155,28 +157,23 @@ respectively.
 
 =head1 EXAMPLES
 
-Use the recognized command B<ffmpeg> in the B<double hyphen syntax>, with
-debug messages printed to stderr:
+Use the sub-command B<png> to take a screenshot of a window, including its
+window manager frame:
 
-    ffcast -vvs ffmpeg -r 30 -- -vcodec libx264 out.mkv
+    ffcast -fw png screenshot-%wx%h.png
 
 Screencast fullscreen on display C<:1>, using the default B<ffmpeg> command
-line:
+line, with debug messages:
 
-    DISPLAY=:1 ffcast
+    DISPLAY=:1 ffcast -vv
 
 Screencast all three windows of B<GIMP>:
 
     ffcast -www % ffmpeg -f x11grab -show_region 1 -s %wx%h -i %d+%x,%y out.mp4
 
-Take a screenshot of a window including its window manager frame (almost
-equivalent to C<import -frame>):
-
-    ffcast -qfw ffmpeg -loglevel quiet -- -frames:v 1 win.png
-
 Resize a window to the same size as another, by two mouse clicks:
 
-    ffcast -w % xdotool selectwindow windowsize %w %h windowfocus
+    ffcast -w xdotool selectwindow windowsize %w %h windowfocus
 
 =head1 AUTHOR
 

@@ -21,10 +21,12 @@ shopt -s extglob lastpipe
 trap -- 'trap_err $LINENO' ERR
 
 readonly progname=ffcast progver='@VERSION@'
-readonly cast_cmd_pattern='@(ffmpeg|byzanz-record|recordmydesktop)'
-declare -a head_ids=()
+declare -A sub_commands=(
+[png]='take a screenshot and save as PNG; optional argument: output filename'
+['%']='useful for bypassing predefined sub-commands, to avoid name conflicts')
+declare -a head_ids=() geospecs=()
 declare -- modulus=2 region_select_action=
-declare -i borders=0 frame=0 print_geometry_only=0 use_format_string=0
+declare -i borders=0 frame=0 print_geometry_only=0
 declare -i verbosity=0
 
 #---
@@ -136,10 +138,11 @@ heads_get_corners_list_by_ref() {
     done
 }
 
-list_cast_cmds() {
-    local -a cmds
-    IFS='|' read -a cmds <<< "${cast_cmd_pattern:2: -1}"
-    printf "%s\n" "${cmds[@]}"
+list_sub_commands() {
+    local cmd
+    for cmd in "${!sub_commands[@]}"; do
+        printf "%s\t%s\n" "$cmd" "${sub_commands[$cmd]}"
+    done
 }
 
 parse_geospec_get_corners() {
@@ -160,7 +163,6 @@ parse_geospec_get_corners() {
             (( y_ = rooth - _y - h )) || :
             ;;
         *)
-            error "invalid geometry specification: \`%s'" "$geospec"
             return 1
             ;;
     esac
@@ -315,10 +317,10 @@ usage() {
     cat <<EOF
 $progname $progver
 Usage:
-  ${0##*/} [options] [<geospec>] % [command [args]]
-  ${0##*/} [options] [<geospec>] [command [args] [--] [args]]
+  ${0##*/} [options] [command [args]]
 
   Options:
+    -g <geospec> specify a region in numeric geometry
     -s           select a rectangular region by mouse
     -w           select a window by mouse click
     -x <n|list>  select the Xinerama head of id n
@@ -326,25 +328,27 @@ Usage:
     -f           include window frame hereafter
     -m <n>       trim region to be divisible by n
     -p           print region geometry only
-    -l           list recognized screencast commands
+    -l           list predefined sub-commands
     -q           be less verbose
     -v           be more verbose
     -h           print this help and exit
 
-  If no region-selecting argument is passed, select fullscreen.
   All the options can be repeated, and are processed in order.
+  The resultant selection is the "union" of all selections.
+  If no region-selecting options are given, select fullscreen.
+  Command arguments are subject to format string substitution.
 EOF
   exit $1
 }
 
 OPTIND=1
-while getopts ':bfhlm:pqsvwx:' opt; do
+while getopts ':bfg:hlm:pqsvwx:' opt; do
     case $opt in
         h)
             usage 0
             ;;
         l)
-            list_cast_cmds
+            list_sub_commands
             exit
             ;;
         m)
@@ -354,6 +358,9 @@ while getopts ':bfhlm:pqsvwx:' opt; do
                 error "invalid modulus: \`%s'" "$OPTARG"
                 exit 1
             fi
+            ;;
+        g)
+            geospecs+=("$OPTARG")
             ;;
         s)
             region_select_action+='s'
@@ -417,7 +424,7 @@ if ! (( rootw && rooth )); then
     exit 1
 fi
 
-declare -- i=0
+declare -- i=0 geospec
 declare -a corners_list=() heads=() head_ids_bad=()
 
 if (( ${#head_ids[@]} )); then
@@ -428,8 +435,7 @@ if (( ${#head_ids[@]} )); then
     debug '%s' "$(declare -p heads)"
     heads_get_corners_list_by_ref corners_list heads head_ids head_ids_bad
     debug '%s' "$(declare -p corners_list)"
-    i=${#corners_list[@]}
-    if (( ! i )); then
+    if (( ! ${#corners_list[@]} )); then
         error 'none of the specified head IDs exists'
         exit 1
     fi
@@ -437,20 +443,15 @@ if (( ${#head_ids[@]} )); then
         warn "ignored non-existent head ids: %s" "${head_ids_bad[*]}"
     fi
     corners_list=("${corners_list[@]}")  # indexing
+    i=${#corners_list[@]}
 fi
 
-while (( $# )); do
-    if [[ $1 == '%' ]]; then
-        use_format_string=1
-        shift
-        break
-    elif [[ $1 == $cast_cmd_pattern ]]; then
-        break
+for geospec in "${geospecs[@]}"; do
+    if ! corners_list[i++]=$(parse_geospec_get_corners "$geospec"); then
+        warn "ignored invalid geometry specification: \`%s'" "$geospec"
+        ((i--)) || :
     fi
-    # The rest are geometry specifications
-    corners_list[i++]=$(parse_geospec_get_corners "$1")
     debug "corners: %s" "${corners_list[-1]}"
-    shift
 done
 
 printf %s "$region_select_action" |
@@ -524,56 +525,39 @@ if (( modulus > 1 )); then
 fi
 
 #---
-# Inject selection geometry into cast command line and execute
+# Now with the geometry sorted out, we're ready to execute the sub-command
 
-declare -- cast_cmd=$1
-declare -a cast_args
+declare -- sub_cmd=$1
+declare -a cmdline=()
 
 if shift; then
-    if (( use_format_string )); then
-        while (( $# )); do
-            cast_args+=("$(format_to_string "$1")")
-            shift
-        done
-    else
-        declare -a x11grab_opts
-        case $cast_cmd in
-            byzanz-record)
-                x11grab_opts=(--x="$_x" --y="$_y" --width="$w" --height="$h" \
-                    --display="$DISPLAY")
-                ;;
-            ffmpeg)
-                x11grab_opts=(-f x11grab -s "${w}x$h" -i "$DISPLAY+$_x,$_y")
-                ;;
-            recordmydesktop)
-                x11grab_opts=(-display "$DISPLAY" -width "$w" -height "$h")
-                # As of recordMyDesktop 0.3.8.1, x- and y-offsets default to 0,
-                # but -x and -y don't accept 0 as an argument. #FAIL
-                (( _x )) && x11grab_opts+=(-x "$_x")
-                (( _y )) && x11grab_opts+=(-y "$_y")
-                ;;
-            *)
-                error "invalid cast command: \`%s'" "$cast_cmd"
-                exit 1
-                ;;
-        esac
-
-        while (( $# )) && [[ $1 != '--' ]]; do
-            cast_args+=("$1")
-            shift
-        done
-        if shift; then
-            cast_args+=("${x11grab_opts[@]}" "$@")
-        else
-            cast_args=("${x11grab_opts[@]}" "${cast_args[@]}")
-        fi
-    fi
+    while (( $# )); do
+        cmdline+=("$(format_to_string "$1")")
+        shift
+    done
+    set -- "${cmdline[@]}"
+    cmdline=()
+    case $sub_cmd in
+        png)
+            outfile=${1:-screenshot.png}
+            msg 'saving to file: %s' "$outfile"
+            cmdline=(ffmpeg -loglevel quiet -f x11grab -show_region 1
+                -s "${w}x$h" -i "$DISPLAY+$_x,$_y" -frames:v 1
+                -codec:v png -f image2 "$outfile")
+            ;;
+        %)
+            cmdline=("$@")
+            ;;
+        *)
+            cmdline=("$sub_cmd" "$@")
+            ;;
+    esac
 else
-    cast_cmd=ffmpeg
-    cast_args=(-r 25 -f x11grab -s "${w}x$h" -i "$DISPLAY+$_x,$_y" -vcodec
-        libx264 "$(printf '%s-%(%Y%m%d-%H%M%S)T.mkv' "$progname" -1)")
+    outfile=$(printf '%s-%(%s)T.mkv' "$progname" -1)
+    cmdline=(ffmpeg -r 25 -f x11grab -show_region 1 -s "${w}x$h"
+        -i "$DISPLAY+$_x,$_y" -vcodec libx264 "$outfile")
 fi
 
-debug_run exec "$cast_cmd" "${cast_args[@]}"
+debug_run exec "${cmdline[@]}"
 
 # vim:ts=4:sw=4:et:cc=80:
