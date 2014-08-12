@@ -1,5 +1,5 @@
 PACKAGE = FFcast
-VERSION = 1.1
+VERSION = 1.1.1
 
 OUT = xrectsel
 SRC = $(wildcard *.c)
