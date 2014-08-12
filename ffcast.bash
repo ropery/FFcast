@@ -109,6 +109,10 @@ format_to_string() {
                 'y') str+=$_y;;
                 'X') str+=$x_;;
                 'Y') str+=$y_;;
+                'c') str+=$_x,$_y;;
+                'C') str+=$x_,$y_;;
+                'g') str+=${w}x$h+$_x+$_y;;
+                's') str+=${w}x$h;;
                 *) str+=%$c;;
             esac
         else

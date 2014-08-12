@@ -135,6 +135,22 @@ Right offset
 
 Bottom offset
 
+=item B<%c>
+
+Equivalent to B<%x,%y>
+
+=item B<%C>
+
+Equivalent to B<%X,%Y>
+
+=item B<%g>
+
+Equivalent to B<%wx%h+%x+%y>
+
+=item B<%s>
+
+Equivalent to B<%wx%h>
+
 =item B<%%>
 
 A literal %
@@ -164,7 +180,7 @@ respectively.
 Use the sub-command B<png> to take a screenshot of a window, including its
 window manager frame:
 
-    ffcast -fw png screenshot-%wx%h.png
+    ffcast -fw png screenshot-%s.png
 
 Screencast fullscreen on display C<:1>, using the default B<ffmpeg> command
 line, with debug messages:
@@ -173,7 +189,7 @@ line, with debug messages:
 
 Screencast all three windows of B<GIMP>:
 
-    ffcast -www % ffmpeg -f x11grab -show_region 1 -s %wx%h -i %d+%x,%y out.mp4
+    ffcast -www ffmpeg -f x11grab -show_region 1 -s %s -i %d+%c out.mp4
 
 Resize a window to the same size as another, by two mouse clicks:
 
@@ -183,7 +199,7 @@ Take a screenshot of two windows combined, excluding anything invisible on
 head 0, using either of:
 
     ffcast -i -x 0 -g "$(ffcast -wwp)" png
-    ffcast -m 1 -ww ffcast -i -x 0 -g %wx%h+%x+%y png
+    ffcast -m 1 -ww ffcast -i -x 0 -g %g png
 
 =head1 AUTHOR
 
