@@ -62,14 +62,17 @@ Requirements
 Get the Source
 --------------
 
-- Releases: https://github.com/lolilolicon/FFcast2/downloads
-- Git repo: git://github.com/lolilolicon/FFcast2.git
+The source code is hosted at GitHub:
+either https://github.com/lolilolicon/FFcast.git[git clone] or
+https://github.com/lolilolicon/FFcast/releases[get releases].
 
 Installation
 ------------
 
 The usual `make && make install` works as expected.  Read +Makefile+ for
 details.
+
+For Arch Linux users, https://aur.archlinux.org/packages/ffcast/[AUR/ffcast].
 
 Usage
 -----
@@ -120,7 +123,7 @@ when you run a nested X server with `Xephyr` and want to record stuff inside
 its window.
 
 ----
-ffcast -w recordmydesktop -- -o cast.ogv
+ffcast -fw recordmydesktop -- -o cast.ogv
 ----
 
 An example of using an alternative recording command, `recordmydesktop` (rmd).
@@ -130,6 +133,9 @@ The magic, again, is FFcast injects the `-display`, `-x`, `-y`, `-width` and
 `--`.  The `--` can also be omitted, since FFcast by default injects the
 geometry options right after the screencast command.  Use `ffcast -l` to get a
 list of supported screencast commands.
+
+The `-f` option asks FFcast to include the window manager frame of the selected
+window. For this to work, the window manager must support `_NET_FRAME_EXTENTS`.
 
 ----
 ffcast -w % echo %wx%h+%x+%y
@@ -156,7 +162,7 @@ of this is that, for example, you can easily pass audio input options to get
 audio recording- a feature widely expected yet hard to implement/maintain.
 
 The reasoning is that FFcast should not know anything about FFmpeg except for
-what it must know.  In other words, I will not maintain the FFmpeg's crap,
+what it must know.  In other words, I will not maintain FFmpeg's crap,
 it's the user's responsibility to keep up with whatever FFmpeg changes.  In
 other words, FFcast doesn't hold the user's hands but gives him/her all the
 control.  Whatever works for you ;).  The part FFcast does touch, however, is
