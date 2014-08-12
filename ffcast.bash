@@ -26,7 +26,7 @@ declare -A sub_commands=(
 ['%']='useful for bypassing predefined sub-commands, to avoid name conflicts')
 declare -a head_ids=() geospecs=()
 declare -- modulus=2 region_select_action=
-declare -i borders=0 frame=0 print_geometry_only=0
+declare -i borders=0 frame=0 intersection=0 print_geometry_only=0
 declare -i verbosity=0
 
 #---
@@ -326,6 +326,7 @@ Usage:
     -x <n|list>  select the Xinerama head of id n
     -b           include window borders hereafter
     -f           include window frame hereafter
+    -i           combine regions by intersection
     -m <n>       trim region to be divisible by n
     -p           print region geometry only
     -l           list predefined sub-commands
@@ -334,7 +335,7 @@ Usage:
     -h           print this help and exit
 
   All the options can be repeated, and are processed in order.
-  The resultant selection is the "union" of all selections.
+  Selections are combined by union, unless -i is specified.
   If no region-selecting options are given, select fullscreen.
   Command arguments are subject to format string substitution.
 EOF
@@ -342,15 +343,10 @@ EOF
 }
 
 OPTIND=1
-while getopts ':bfg:hlm:pqsvwx:' opt; do
+while getopts ':bfg:hilm:pqsvwx:' opt; do
     case $opt in
-        h)
-            usage 0
-            ;;
-        l)
-            list_sub_commands
-            exit
-            ;;
+        h) usage 0;;
+        l) list_sub_commands; exit;;
         m)
             if [[ $OPTARG == [1-9]*([0-9]) ]]; then
                 modulus=$OPTARG
@@ -359,15 +355,9 @@ while getopts ':bfg:hlm:pqsvwx:' opt; do
                 exit 1
             fi
             ;;
-        g)
-            geospecs+=("$OPTARG")
-            ;;
-        s)
-            region_select_action+='s'
-            ;;
-        w)
-            region_select_action+='w'
-            ;;
+        g) geospecs+=("$OPTARG");;
+        s) region_select_action+='s';;
+        w) region_select_action+='w';;
         x)
             if [[ $OPTARG == 'list' ]]; then
                 xdpyinfo_list_heads
@@ -384,29 +374,14 @@ while getopts ':bfg:hlm:pqsvwx:' opt; do
                 head_ids[i]=$i
             done
             ;;
-        b)
-            region_select_action+='b'
-            ;;
-        f)
-            region_select_action+='f'
-            ;;
-        p)
-            print_geometry_only=1
-            ;;
-        q)
-            (( verbosity-- )) || :
-            ;;
-        v)
-            (( verbosity++ )) || :
-            ;;
-        '?')
-            error "invalid option: \`%s'" "$OPTARG"
-            exit 1
-            ;;
-        ':')
-            error "option requires an argument: \`%s'" "$OPTARG"
-            exit 1
-            ;;
+        b) region_select_action+='b';;
+        f) region_select_action+='f';;
+        i) intersection=1;;
+        p) print_geometry_only=1;;
+        q) (( verbosity-- )) || :;;
+        v) (( verbosity++ )) || :;;
+        '?') error "invalid option: \`%s'" "$OPTARG"; exit 1;;
+        ':') error "option requires an argument: \`%s'" "$OPTARG"; exit 1;;
     esac
 done
 shift $(( OPTIND -1 ))
@@ -477,8 +452,13 @@ while read -n 1; do
 done
 
 if (( i )); then
-    corners=$(region_union_corners "${corners_list[@]}")
-    debug "corners union all selections: %s" "${corners}"
+    if (( intersection )); then
+        corners=$(region_intersect_corners "${corners_list[@]}")
+        debug "corners intersection all selections: %s" "${corners}"
+    else
+        corners=$(region_union_corners "${corners_list[@]}")
+        debug "corners union all selections: %s" "${corners}"
+    fi
     corners=$(region_intersect_corners "$corners" "0,0 0,0")
     debug "corners rootwin intersection: %s" "${corners}"
     IFS=' ,' read _x _y x_ y_ <<< "$corners"

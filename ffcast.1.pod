@@ -57,6 +57,10 @@ See B<L<GEOMETRY SPECIFICATION|/GEOMETRY SPECIFICATION>>.
 
 Print help message, then exit.
 
+=item B<-i>
+
+Combine selected regions by intersection instead of union.
+
 =item B<-l>
 
 List predefined sub-commands with brief description, then exit.
@@ -174,6 +178,12 @@ Screencast all three windows of B<GIMP>:
 Resize a window to the same size as another, by two mouse clicks:
 
     ffcast -w xdotool selectwindow windowsize %w %h windowfocus
+
+Take a screenshot of two windows combined, excluding anything invisible on
+head 0, using either of:
+
+    ffcast -i -x 0 -g "$(ffcast -wwp)" png
+    ffcast -m 1 -ww ffcast -i -x 0 -g %wx%h+%x+%y png
 
 =head1 AUTHOR
 
