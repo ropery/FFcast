@@ -53,4 +53,7 @@ dist:
 	install -dm755 release
 	git archive --prefix=$(PACKAGE)-$(VERSION)/ -o release/$(PACKAGE)-$(VERSION).tar.gz $(VERSION)
 
-.PHONY: all clean install uninstall dist
+version:
+	@echo $(VERSION)
+
+.PHONY: all clean install uninstall dist version
