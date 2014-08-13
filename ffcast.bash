@@ -368,7 +368,7 @@ while getopts ':#:bfg:hilm:pqsvwx:' opt; do
         g) geospecs+=("$OPTARG");;
         s) region_select_action+='s';;
         w) region_select_action+='w';;
-       \#) window_ids+=("$OPTARG");;
+       \#) region_select_action+='#'; window_ids+=("$OPTARG");;
         x)
             if [[ $OPTARG == 'list' ]]; then
                 xdpyinfo_list_heads
@@ -410,7 +410,7 @@ if ! (( rootw && rooth )); then
     exit 1
 fi
 
-declare -- i=0 corners geospec window_id
+declare -- i=0 wid=0 corners geospec
 declare -a corners_list=() heads=() head_ids_bad=()
 
 if (( ${#head_ids[@]} )); then
@@ -441,16 +441,6 @@ for geospec in "${geospecs[@]}"; do
     fi
 done
 
-for window_id in "${window_ids[@]}"; do
-    if ! corners=$(window_id_get_corners "$window_id"); then
-        error "failed to get corners of window with ID \`%s'" "$window_id"
-        exit 1
-    else
-        corners_list[i++]=$corners
-        debug "corners: %s" "${corners_list[-1]}"
-    fi
-done
-
 printf %s "$region_select_action" |
 while read -n 1; do
     case $REPLY in
@@ -460,6 +450,11 @@ while read -n 1; do
             ;;
         'w')
             corners_list[i++]=$(select_window_get_corners)
+            debug "corners: %s" "${corners_list[-1]}"
+            ;;
+        '#')
+            corners_list[i++]=$(window_id_get_corners "${window_ids[wid]}")
+            (( ++wid ))
             debug "corners: %s" "${corners_list[-1]}"
             ;;
         'b')
