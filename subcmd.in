@@ -4,6 +4,10 @@ sub_commands['help']='print help for a sub-command'
 sub_cmdfuncs['help']=subcmd_help
 subcmd_help() {
     local sub_cmd=$1
+    if ! (( $# )); then
+        list_sub_commands
+        return
+    fi
     if [[ -v sub_commands[$sub_cmd] ]]; then
         local sub_cmd_func=${sub_cmdfuncs[$sub_cmd]:-$sub_cmd}
         printf '%s: %s\n' "$sub_cmd" "${sub_commands[$sub_cmd]}"

@@ -27,7 +27,7 @@ shopt -s extglob lastpipe
 trap -- 'trap_err $LINENO' ERR
 
 readonly -a \
-    srcdirs=({/usr/lib,/etc,"${XDG_CONFIG_HOME:-~/.config}"}/'@PRGNAME@')
+    srcdirs=({/usr/lib,/etc,"${XDG_CONFIG_HOME:-$HOME/.config}"}/'@PRGNAME@')
 declare -A sub_commands=() sub_cmdfuncs=()
 declare -a head_ids=() geospecs=() window_ids=()
 declare -- modulus=2 region_select_action=
