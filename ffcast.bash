@@ -523,10 +523,10 @@ if shift; then
     cmdline=()
     case $sub_cmd in
         png)
-            outfile=${1:-screenshot.png}
+            outfile=${1:-screenshot-${w}x$h.png}
             msg 'saving to file: %s' "$outfile"
             cmdline=(ffmpeg -loglevel quiet -f x11grab -show_region 1
-                -s "${w}x$h" -i "$DISPLAY+$_x,$_y" -frames:v 1
+                -video_size "${w}x$h" -i "$DISPLAY+$_x,$_y" -frames:v 1
                 -codec:v png -f image2 "$outfile")
             ;;
         %)
@@ -538,8 +538,8 @@ if shift; then
     esac
 else
     outfile=$(printf '%s-%(%s)T.mkv' "$progname" -1)
-    cmdline=(ffmpeg -r 25 -f x11grab -show_region 1 -s "${w}x$h"
-        -i "$DISPLAY+$_x,$_y" -vcodec libx264 "$outfile")
+    cmdline=(ffmpeg -f x11grab -show_region 1 -framerate 25 -video_size
+        "${w}x$h" -i "$DISPLAY+$_x,$_y" -vcodec libx264 "$outfile")
 fi
 
 debug_run exec "${cmdline[@]}"
