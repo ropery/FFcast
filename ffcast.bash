@@ -24,7 +24,7 @@ readonly progname=ffcast progver='@VERSION@'
 declare -A sub_commands=(
 [png]='take a screenshot and save as PNG; optional argument: output filename'
 ['%']='useful for bypassing predefined sub-commands, to avoid name conflicts')
-declare -a head_ids=() geospecs=()
+declare -a head_ids=() geospecs=() window_ids=()
 declare -- modulus=2 region_select_action=
 declare -i borders=0 frame=0 intersection=0 print_geometry_only=0
 declare -i verbosity=0
@@ -217,6 +217,11 @@ select_window_get_corners() {
     LC_ALL=C xwininfo | xwininfo_get_corners
 }
 
+window_id_get_corners() {
+    verbose "get corners by window ID %x" "$1"
+    LC_ALL=C xwininfo -id "$1" | xwininfo_get_corners
+}
+
 # stdin: xdpyinfo -ext XINERAMA (preferably sanitized)
 # $1: array variable to assign heads to, i.e. =([id]=geometry ...)
 xdpyinfo_get_heads_by_ref() {
@@ -327,6 +332,7 @@ Usage:
     -g <geospec> specify a region in numeric geometry
     -s           select a rectangular region by mouse
     -w           select a window by mouse click
+    -# <n>       select a window by window ID
     -x <n|list>  select the Xinerama head of id n
     -b           include window borders hereafter
     -f           include window frame hereafter
@@ -347,7 +353,7 @@ EOF
 }
 
 OPTIND=1
-while getopts ':bfg:hilm:pqsvwx:' opt; do
+while getopts ':#:bfg:hilm:pqsvwx:' opt; do
     case $opt in
         h) usage 0;;
         l) list_sub_commands; exit;;
@@ -362,6 +368,7 @@ while getopts ':bfg:hilm:pqsvwx:' opt; do
         g) geospecs+=("$OPTARG");;
         s) region_select_action+='s';;
         w) region_select_action+='w';;
+       \#) window_ids+=("$OPTARG");;
         x)
             if [[ $OPTARG == 'list' ]]; then
                 xdpyinfo_list_heads
@@ -403,7 +410,7 @@ if ! (( rootw && rooth )); then
     exit 1
 fi
 
-declare -- i=0 geospec
+declare -- i=0 corners geospec window_id
 declare -a corners_list=() heads=() head_ids_bad=()
 
 if (( ${#head_ids[@]} )); then
@@ -426,11 +433,22 @@ if (( ${#head_ids[@]} )); then
 fi
 
 for geospec in "${geospecs[@]}"; do
-    if ! corners_list[i++]=$(parse_geospec_get_corners "$geospec"); then
+    if ! corners=$(parse_geospec_get_corners "$geospec"); then
         warn "ignored invalid geometry specification: \`%s'" "$geospec"
-        ((i--)) || :
+    else
+        corners_list[i++]=$corners
+        debug "corners: %s" "${corners_list[-1]}"
     fi
-    debug "corners: %s" "${corners_list[-1]}"
+done
+
+for window_id in "${window_ids[@]}"; do
+    if ! corners=$(window_id_get_corners "$window_id"); then
+        error "failed to get corners of window with ID \`%s'" "$window_id"
+        exit 1
+    else
+        corners_list[i++]=$corners
+        debug "corners: %s" "${corners_list[-1]}"
+    fi
 done
 
 printf %s "$region_select_action" |

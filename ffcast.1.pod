@@ -40,6 +40,10 @@ in the order they are specified.
 
 =over 4
 
+=item B<-#> I<E<lt>nE<gt>>
+
+Select window with ID I<E<lt>nE<gt>>.
+
 =item B<-b>
 
 Include borders of windows to be selected.
