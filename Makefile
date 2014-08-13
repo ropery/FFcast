@@ -28,10 +28,9 @@ all: $(BINPROGS) $(LIBSTUFF) $(MANPAGES)
 $(OUT): $(OBJ)
 	$(CC) -o $@ $(OBJ) $(LDFLAGS)
 
-%: %.bash
+%: %.in
 	sed -e 's/@VERSION@/$(VERSION)/g' \
-		-e 's/@PRGNAME@/$(PRGNAME)/g' \
-		-e 's|@LIBDIR@|$(LIBDIR)|g' $< > $@ && chmod go-w,+x $@
+		-e 's/@PRGNAME@/$(PRGNAME)/g' $< > $@ && chmod go-w,+x $@
 
 %.1: %.1.pod
 	pod2man \
@@ -44,7 +43,10 @@ clean:
 	$(RM) $(OBJ) $(BINPROGS) $(LIBSTUFF) $(MANPAGES)
 
 install: all
-	install -dm755 $(DESTDIR)$(BINDIR) $(DESTDIR)$(MAN1DIR)
+	install -dm755 \
+		$(DESTDIR)$(BINDIR) \
+		$(DESTDIR)$(LIBDIR)/$(PRGNAME) \
+		$(DESTDIR)$(MAN1DIR)
 	install -m755 $(BINPROGS) $(DESTDIR)$(BINDIR)
 	install -m644 $(LIBSTUFF) $(DESTDIR)$(LIBDIR)/$(PRGNAME)
 	install -m644 $(MANPAGES) $(DESTDIR)$(MAN1DIR)
