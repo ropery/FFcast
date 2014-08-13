@@ -147,13 +147,6 @@ heads_get_corners_list_by_ref() {
     done
 }
 
-list_sub_commands() {
-    local cmd
-    for cmd in "${!sub_commands[@]}"; do
-        printf "%s\t%s\n" "$cmd" "${sub_commands[$cmd]}"
-    done | sort
-}
-
 parse_geospec_get_corners() {
     local geospec=$1
     local _x _y x_ y_ w h
@@ -344,7 +337,6 @@ Usage:
     -i           combine regions by intersection
     -m <n>       trim region to be divisible by n
     -p           print region geometry only
-    -l           list predefined sub-commands
     -q           be less verbose
     -v           be more verbose
     -h           print this help and exit
@@ -358,10 +350,9 @@ EOF
 }
 
 OPTIND=1
-while getopts ':#:bfg:hilm:pqsvwx:' opt; do
+while getopts ':#:bfg:him:pqsvwx:' opt; do
     case $opt in
         h) usage 0;;
-        l) list_sub_commands; exit;;
         m)
             if [[ $OPTARG == [1-9]*([0-9]) ]]; then
                 modulus=$OPTARG

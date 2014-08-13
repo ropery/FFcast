@@ -66,10 +66,6 @@ Print help message, then exit.
 
 Combine selected regions by intersection instead of union.
 
-=item B<-l>
-
-List predefined sub-commands with brief description, then exit.
-
 =item B<-m> I<E<lt>nE<gt>>
 
 Trim both dimensions of the region to be divisible by I<E<lt>nE<gt>>. By
@@ -188,6 +184,10 @@ I</etc/ffcast/subcmd> and I<$XDG_CONFIG_HOME/ffcast/subcmd>, in that order.
 To learn how to register a sub-command, refer to I</usr/lib/ffcast/subcmd>.
 
 =head1 EXAMPLES
+
+List all sub-commands with brief description:
+
+    ffcast help
 
 Use the sub-command B<png> to take a screenshot of a window, including its
 window manager frame:

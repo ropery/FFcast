@@ -31,7 +31,9 @@ sub_cmdfuncs['help']=subcmd_help
 subcmd_help() {
     local sub_cmd=$1
     if ! (( $# )); then
-        list_sub_commands
+        for sub_cmd in "${!sub_commands[@]}"; do
+            printf "%s\t%s\n" "$sub_cmd" "${sub_commands[$sub_cmd]}"
+        done | sort
         return
     fi
     if [[ -v sub_commands[$sub_cmd] ]]; then
@@ -50,6 +52,12 @@ subcmd_help() {
     exit 1
 }
 
+sub_commands['%']='bypass predefined sub-commands, to avoid name conflicts'
+sub_cmdfuncs['%']=subcmd_nop
+subcmd_nop() {
+    cmdline=("$@")
+}
+
 sub_commands['png']='take a screenshot and save it as a PNG image'
 png() {
     local outfile=${1:-screenshot-${w}x$h.png}
@@ -57,12 +65,6 @@ png() {
     cmdline=(ffmpeg -loglevel quiet -f x11grab -show_region 1
         -video_size "${w}x$h" -i "$DISPLAY+$_x,$_y" -frames:v 1
         -codec:v png -f image2 "$outfile")
-}
-
-sub_commands['%']='bypass predefined sub-commands, to avoid name conflicts'
-sub_cmdfuncs['%']=nop
-nop() {
-    cmdline=("$@")
 }
 
 # vim:ts=4:sw=4:et:cc=80:
