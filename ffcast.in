@@ -65,6 +65,19 @@ _quote_cmd_line() {
     printf '\n'
 }
 
+_report_array_by_key() {
+    local varname=$1
+    local -n array=$1
+    local key=$2
+    printf "%q[%q]=%q\n" "$varname" "$key" "${array[$key]}"
+}
+
+debug_array_by_key() {
+    (( verbosity >= 2 )) || return 0
+    printf 'debug: '
+    _report_array_by_key "$@"
+} >&2
+
 debug_dryrun() {
     (( verbosity >=2 )) || return 0
     _quote_cmd_line 'debug: command: ' "$@"
@@ -335,6 +348,12 @@ run_subcmd_or_print() {
     fi
 }
 
+set_region_vars_by_corners() {
+    IFS=' ,' read _x _y x_ y_
+    (( w = rootw - _x - x_ ))
+    (( h = rooth - _y - y_ ))
+}
+
 #---
 # Process arguments passed to ffcast
 
@@ -440,7 +459,7 @@ for geospec in "${geospecs[@]}"; do
         warn "ignored invalid geometry specification: \`%s'" "$geospec"
     else
         corners_list[i++]=$corners
-        debug "corners: %s" "${corners_list[-1]}"
+        debug_array_by_key corners_list $(( i - 1 ))
     fi
 done
 
@@ -449,16 +468,16 @@ while read -n 1; do
     case $REPLY in
         's')
             corners_list[i++]=$(select_region_get_corners)
-            debug "corners: %s" "${corners_list[-1]}"
+            debug_array_by_key corners_list $(( i - 1 ))
             ;;
         'w')
             corners_list[i++]=$(select_window_get_corners)
-            debug "corners: %s" "${corners_list[-1]}"
+            debug_array_by_key corners_list $(( i - 1 ))
             ;;
         '#')
             corners_list[i++]=$(window_id_get_corners "${window_ids[wid]}")
             (( ++wid ))
-            debug "corners: %s" "${corners_list[-1]}"
+            debug_array_by_key corners_list $(( i - 1 ))
             ;;
         'b')
             borders=1
@@ -474,22 +493,23 @@ done
 if (( i )); then
     if (( intersection )); then
         corners=$(region_intersect_corners "${corners_list[@]}")
-        debug "corners intersection all selections: %s" "${corners}"
+        debug "intersection(user_selections) -> corners=%q" "${corners}"
     else
         corners=$(region_union_corners "${corners_list[@]}")
-        debug "corners union all selections: %s" "${corners}"
+        debug "union(user_selections) -> corners=%q" "${corners}"
     fi
-    corners=$(region_intersect_corners "$corners" "0,0 0,0")
-    debug "corners rootwin intersection: %s" "${corners}"
-    IFS=' ,' read _x _y x_ y_ <<< "$corners"
+    corners=$(region_intersect_corners "$corners" '0,0 0,0')
+    debug "intersection_with(root_window) -> corners=%q" "${corners}"
+else
+    corners='0,0 0,0'
+    verbose 'no valid user selection, falling back to fullscreen'
+    corners_list=("$corners")
+    debug '%s' "$(declare -p corners_list)"
 fi
 
-if ! (( (w = rootw - _x - x_) > 0 )); then
-    error 'region: invalid width: %d' "$w"
-    exit 1
-fi
-if ! (( (h = rooth - _y - y_) > 0 )); then
-    error 'region: invalid height: %d' "$h"
+if ! set_region_vars_by_corners <<< "$corners"; then
+    error 'failure setting region vars from corners'
+    debug '%s' "$(declare -p corners {root,}{w,h} _{x,y} {x,y}_)"
     exit 1
 fi
 

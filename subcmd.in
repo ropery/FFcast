@@ -60,13 +60,22 @@ subcmd_nop() {
     cmdline=("$@")
 }
 
+sub_commands['dump']='dump region-related variables in bash code'
+sub_cmdfuncs['dump']=subcmd_dump
+subcmd_dump() {
+    local i=0
+    (( ! ${#head_ids[@]} )) || declare -p heads
+    declare -p intersection corners{_list,} _{x,y} {x,y}_ {,root}{w,h}
+    cmdline=()
+}
+
 sub_commands['png']='take a screenshot and save it as a PNG image'
 sub_cmdfuncs['png']=subcmd_png
 subcmd_png() {
     : 'usage: png [filename]'
     local outfile=${1:-screenshot-${w}x$h.png}
     msg 'saving to file: %s' "$outfile"
-    cmdline=(ffmpeg -loglevel quiet -f x11grab -show_region 1 \
+    cmdline=(ffmpeg -loglevel error -f x11grab -show_region 1 \
         -video_size "${w}x$h" -i "$DISPLAY+$_x,$_y" -frames:v 1 \
         -codec:v png -f image2 "$outfile")
 }
