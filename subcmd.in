@@ -1,5 +1,31 @@
 #!/bin/bash
 
+# To register a sub-command 'foo', you MUST add this,
+#
+#     sub_commands['foo']='description'
+#
+# By default, running sub-command 'foo' will execute the function 'foo'.
+# But you MAY explicitly associate sub-command 'foo' with function 'bar',
+#
+#     sub_cmdfuncs['foo']=bar
+#
+# This is useful in the cases when your sub-command isn't a valid function
+# name, or when it conflicts with an existing function.
+#
+# A sub-command function SHOULD in most cases set the cmdline array, which
+# holds the final command line to be executed by ffcast,
+#
+#     bar() {
+#         cmdline=(ffmpeg ...)
+#     }
+#
+# As this file is sourced after all the geometry processing has been done, you
+# have access to, among others, the variables $w $h $_x $_y $x_ $y_ and all the
+# functions defined in ffcast.
+#
+# The positional arguments to a sub-command function are all the arguments
+# after the sub-command as specified on the command line by the user.
+
 sub_commands['help']='print help for a sub-command'
 sub_cmdfuncs['help']=subcmd_help
 subcmd_help() {

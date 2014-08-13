@@ -26,7 +26,8 @@ I<E<lt>commandE<gt>> matches one of them, predefined actions associated with
 the matching sub-command is performed; otherwise, I<E<lt>commandE<gt>> is
 executed as an external command. The B<%> sub-command can be used to prevent
 I<E<lt>commandE<gt>> from being executed as a sub-command, in the case of name
-conflicts.
+conflicts. It's possible to add or override sub-commands via user
+configuration. See B<L<SUB-COMMANDS|/SUB-COMMANDS>>.
 
 All I<E<lt>argsE<gt>> are subject to format string substitution.
 See B<L<FORMAT STRINGS|/FORMAT STRINGS>>.
@@ -178,6 +179,13 @@ I<w>, I<h>, I<x> and I<y> are the width, height and left and right offsets,
 respectively.
 
 =back
+
+=head1 SUB-COMMANDS
+
+To import sub-commands, ffcast B<source>s the files I</usr/lib/ffcast/subcmd>,
+I</etc/ffcast/subcmd> and I<$XDG_CONFIG_HOME/ffcast/subcmd>, in that order.
+
+To learn how to register a sub-command, refer to I</usr/lib/ffcast/subcmd>.
 
 =head1 EXAMPLES
 
