@@ -16,6 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+if (( ${BASH_VERSINFO[0]} == 4 && ${BASH_VERSINFO[1]} < 2 )) ||
+   (( ${BASH_VERSINFO[0]} < 4 )); then
+    printf 'fatal: requires bash 4.2+ but this is bash %s\n' "$BASH_VERSION"
+    exit 42
+fi >&2
+
 set -e +m -o pipefail
 shopt -s extglob lastpipe
 trap -- 'trap_err $LINENO' ERR
