@@ -325,14 +325,6 @@ xwininfo_get_corners() {
 }
 
 #---
-# Import predefined sub-commands
-
-for srcdir in "${srcdirs[@]}"; do
-    subcmdsrc=$srcdir/subcmd
-    [[ ! -r $subcmdsrc ]] || . "$subcmdsrc"
-done
-
-#---
 # Process arguments passed to ffcast
 
 usage() {
@@ -533,6 +525,17 @@ if (( modulus > 1 )); then
         (( y_ += h_old - h ))
     fi
 fi
+
+#---
+# Import predefined sub-commands
+
+for srcdir in "${srcdirs[@]}"; do
+    subcmdsrc=$srcdir/subcmd
+    if [[ -r $subcmdsrc ]]; then
+        debug "importing sub-commands from file %s" "$subcmdsrc"
+        . "$subcmdsrc"
+    fi
+done
 
 #---
 # Now with the geometry sorted out, we're ready to execute the sub-command
