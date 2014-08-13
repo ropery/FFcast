@@ -16,20 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-if (( ${BASH_VERSINFO[0]} == 4 && ${BASH_VERSINFO[1]} < 2 )) ||
+if (( ${BASH_VERSINFO[0]} == 4 && ${BASH_VERSINFO[1]} < 3 )) ||
    (( ${BASH_VERSINFO[0]} < 4 )); then
-    printf 'fatal: requires bash 4.2+ but this is bash %s\n' "$BASH_VERSION"
-    exit 42
+    printf 'fatal: requires bash 4.3+ but this is bash %s\n' "$BASH_VERSION"
+    exit 43
 fi >&2
 
 set -e +m -o pipefail
 shopt -s extglob lastpipe
 trap -- 'trap_err $LINENO' ERR
 
-readonly progname=ffcast progver='@VERSION@'
-declare -A sub_commands=(
-[png]='take a screenshot and save as PNG; optional argument: output filename'
-['%']='useful for bypassing predefined sub-commands, to avoid name conflicts')
+readonly -a \
+    srcdirs=({'@LIBDIR@',/etc,"${XDG_CONFIG_HOME:-~/.config}"}/'@PRGNAME@')
+declare -A sub_commands=() sub_cmdfuncs=()
 declare -a head_ids=() geospecs=() window_ids=()
 declare -- modulus=2 region_select_action=
 declare -i borders=0 frame=0 intersection=0 print_geometry_only=0
@@ -152,7 +151,7 @@ list_sub_commands() {
     local cmd
     for cmd in "${!sub_commands[@]}"; do
         printf "%s\t%s\n" "$cmd" "${sub_commands[$cmd]}"
-    done
+    done | sort
 }
 
 parse_geospec_get_corners() {
@@ -326,11 +325,19 @@ xwininfo_get_corners() {
 }
 
 #---
+# Import predefined sub-commands
+
+for srcdir in "${srcdirs[@]}"; do
+    subcmdsrc=$srcdir/subcmd
+    [[ ! -r $subcmdsrc ]] || . "$subcmdsrc"
+done
+
+#---
 # Process arguments passed to ffcast
 
 usage() {
     cat <<EOF
-$progname $progver
+@PRGNAME@ @VERSION@
 Usage:
   ${0##*/} [options] [command [args]]
 
@@ -530,7 +537,7 @@ fi
 #---
 # Now with the geometry sorted out, we're ready to execute the sub-command
 
-declare -- sub_cmd=$1
+declare -- sub_cmd=$1 sub_cmd_func
 declare -a cmdline=()
 
 if shift; then
@@ -540,27 +547,24 @@ if shift; then
     done
     set -- "${cmdline[@]}"
     cmdline=()
-    case $sub_cmd in
-        png)
-            outfile=${1:-screenshot-${w}x$h.png}
-            msg 'saving to file: %s' "$outfile"
-            cmdline=(ffmpeg -loglevel quiet -f x11grab -show_region 1
-                -video_size "${w}x$h" -i "$DISPLAY+$_x,$_y" -frames:v 1
-                -codec:v png -f image2 "$outfile")
-            ;;
-        %)
-            cmdline=("$@")
-            ;;
-        *)
-            cmdline=("$sub_cmd" "$@")
-            ;;
-    esac
+    if [[ -v sub_commands[$sub_cmd] ]]; then
+        sub_cmd_func=${sub_cmdfuncs[$sub_cmd]:-$sub_cmd}
+        if [[ $(type -t "$sub_cmd_func") == function ]]; then
+            "$sub_cmd_func" "$@"
+        else
+            error "sub-command '%s' function '%s' not found" "$sub_cmd" \
+                "$sub_cmd_func"
+            exit 1
+        fi
+    else
+        cmdline=("$sub_cmd" "$@")
+    fi
 else
-    outfile=$(printf '%s-%(%s)T.mkv' "$progname" -1)
+    outfile=$(printf '%s-%(%s)T.mkv' '@PRGNAME@' -1)
     cmdline=(ffmpeg -f x11grab -show_region 1 -framerate 25 -video_size
         "${w}x$h" -i "$DISPLAY+$_x,$_y" -vcodec libx264 "$outfile")
 fi
 
-debug_run exec "${cmdline[@]}"
+(( ! ${#cmdline[@]} )) || debug_run exec "${cmdline[@]}"
 
 # vim:ts=4:sw=4:et:cc=80:

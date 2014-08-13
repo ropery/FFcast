@@ -10,7 +10,7 @@ Requirements
 
 .FFcast
 
-  * Bash 4.2+
+  * Bash 4.3+
   * FFmpeg
   * xdpyinfo - for the -x option
   * xprop    - for the -f option

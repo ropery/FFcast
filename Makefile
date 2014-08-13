@@ -1,4 +1,5 @@
 PACKAGE = FFcast
+PRGNAME = ffcast
 VERSION = 2.0.0-rc2
 
 OUT = xrectsel
@@ -6,11 +7,13 @@ SRC = $(wildcard *.c)
 OBJ = $(SRC:.c=.o)
 
 BINPROGS = ffcast $(OUT)
+LIBSTUFF = subcmd
 MANPAGES = ffcast.1
 
 PREFIX ?= /usr/local
 EXEC_PREFIX ?= $(PREFIX)
 BINDIR = $(EXEC_PREFIX)/bin
+LIBDIR = $(EXEC_PREFIX)/lib
 DATAROOTDIR = $(PREFIX)/share
 MANDIR = $(DATAROOTDIR)/man
 MAN1DIR = $(MANDIR)/man1
@@ -20,13 +23,15 @@ LDFLAGS += -lX11
 
 uppercase = $(shell echo $(1) | tr a-z A-Z)
 
-all: $(BINPROGS) $(MANPAGES)
+all: $(BINPROGS) $(LIBSTUFF) $(MANPAGES)
 
 $(OUT): $(OBJ)
 	$(CC) -o $@ $(OBJ) $(LDFLAGS)
 
 %: %.bash
-	sed 's/@VERSION@/$(VERSION)/g' $< > $@ && chmod go-w,+x $@
+	sed -e 's/@VERSION@/$(VERSION)/g' \
+		-e 's/@PRGNAME@/$(PRGNAME)/g' \
+		-e 's|@LIBDIR@|$(LIBDIR)|g' $< > $@ && chmod go-w,+x $@
 
 %.1: %.1.pod
 	pod2man \
@@ -36,11 +41,12 @@ $(OUT): $(OBJ)
 		--section=1 $< > $@
 
 clean:
-	$(RM) $(OBJ) $(BINPROGS) $(MANPAGES)
+	$(RM) $(OBJ) $(BINPROGS) $(LIBSTUFF) $(MANPAGES)
 
 install: all
 	install -dm755 $(DESTDIR)$(BINDIR) $(DESTDIR)$(MAN1DIR)
 	install -m755 $(BINPROGS) $(DESTDIR)$(BINDIR)
+	install -m644 $(LIBSTUFF) $(DESTDIR)$(LIBDIR)/$(PRGNAME)
 	install -m644 $(MANPAGES) $(DESTDIR)$(MAN1DIR)
 
 uninstall:
