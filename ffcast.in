@@ -30,8 +30,8 @@ readonly -a \
     srcdirs=({/usr/lib,/etc,"${XDG_CONFIG_HOME:-$HOME/.config}"}/'@PRGNAME@')
 declare -A sub_commands=() sub_cmdfuncs=()
 declare -a head_ids=() geospecs=() window_ids=()
-declare -- modulus=2 region_select_action=
-declare -i borders=0 frame=0 intersection=0 print_geometry_only=0
+declare -- region_select_action=
+declare -i borders=0 frame=0 intersection=0
 declare -i verbosity=0
 
 #---
@@ -317,6 +317,24 @@ xwininfo_get_corners() {
     printf '%d,%d %d,%d\n' $_x $_y $x_ $y_
 }
 
+run_subcmd_or_print() {
+    local sub_cmd=$1
+    if [[ -z $sub_cmd ]]; then
+        printf "%dx%d+%d+%d\n" $w $h $_x $_y
+        exit
+    elif [[ -v sub_commands[$sub_cmd] ]]; then
+        shift
+        local sub_cmd_func=${sub_cmdfuncs[$sub_cmd]:-$sub_cmd}
+        if [[ $(type -t "$sub_cmd_func") == function ]]; then
+            "$sub_cmd_func" "$@"
+        else
+            error "sub-command '%s' function '%s' not found" "$sub_cmd" \
+                "$sub_cmd_func"
+            exit 1
+        fi
+    fi
+}
+
 #---
 # Process arguments passed to ffcast
 
@@ -335,8 +353,6 @@ Usage:
     -b           include window borders hereafter
     -f           include window frame hereafter
     -i           combine regions by intersection
-    -m <n>       trim region to be divisible by n
-    -p           print region geometry only
     -q           be less verbose
     -v           be more verbose
     -h           print this help and exit
@@ -350,17 +366,9 @@ EOF
 }
 
 OPTIND=1
-while getopts ':#:bfg:him:pqsvwx:' opt; do
+while getopts ':#:bfg:hiqsvwx:' opt; do
     case $opt in
         h) usage 0;;
-        m)
-            if [[ $OPTARG == [1-9]*([0-9]) ]]; then
-                modulus=$OPTARG
-            else
-                error "invalid modulus: \`%s'" "$OPTARG"
-                exit 1
-            fi
-            ;;
         g) geospecs+=("$OPTARG");;
         s) region_select_action+='s';;
         w) region_select_action+='w';;
@@ -384,7 +392,6 @@ while getopts ':#:bfg:him:pqsvwx:' opt; do
         b) region_select_action+='b';;
         f) region_select_action+='f';;
         i) intersection=1;;
-        p) print_geometry_only=1;;
         q) (( verbosity-- )) || :;;
         v) (( verbosity++ )) || :;;
         '?') error "invalid option: \`%s'" "$OPTARG"; exit 1;;
@@ -486,37 +493,6 @@ if ! (( (h = rooth - _y - y_) > 0 )); then
     exit 1
 fi
 
-if (( print_geometry_only )); then
-    printf "%dx%d+%d+%d\n" $w $h $_x $_y
-    exit
-fi
-
-#---
-# Post-process region geometry
-
-if (( modulus > 1 )); then
-    w_old=$w
-    h_old=$h
-
-    if ! (( w = modulus * (w / modulus) )); then
-        error 'region: width too small for modulus %d: %d' $modulus $w_old
-        exit 1
-    fi
-    if ! (( h = modulus * (h / modulus) )); then
-        error 'region: height too small for modulus %d: %d' $modulus $h_old
-        exit 1
-    fi
-
-    if (( w < w_old )); then
-        verbose 'region: trim width from %d to %d' $w_old $w
-        (( x_ += w_old - w ))
-    fi
-    if (( h < h_old )); then
-        verbose 'region: trim height from %d to %d' $h_old $h
-        (( y_ += h_old - h ))
-    fi
-fi
-
 #---
 # Import predefined sub-commands
 
@@ -531,33 +507,14 @@ done
 #---
 # Now with the geometry sorted out, we're ready to execute the sub-command
 
-declare -- sub_cmd=$1 sub_cmd_func
 declare -a cmdline=()
 
-if shift; then
-    while (( $# )); do
-        cmdline+=("$(format_to_string "$1")")
-        shift
-    done
-    set -- "${cmdline[@]}"
-    cmdline=()
-    if [[ -v sub_commands[$sub_cmd] ]]; then
-        sub_cmd_func=${sub_cmdfuncs[$sub_cmd]:-$sub_cmd}
-        if [[ $(type -t "$sub_cmd_func") == function ]]; then
-            "$sub_cmd_func" "$@"
-        else
-            error "sub-command '%s' function '%s' not found" "$sub_cmd" \
-                "$sub_cmd_func"
-            exit 1
-        fi
-    else
-        cmdline=("$sub_cmd" "$@")
-    fi
-else
-    outfile=$(printf '%s-%(%s)T.mkv' '@PRGNAME@' -1)
-    cmdline=(ffmpeg -f x11grab -show_region 1 -framerate 25 -video_size
-        "${w}x$h" -i "$DISPLAY+$_x,$_y" -vcodec libx264 "$outfile")
-fi
+while (( $# )); do
+    cmdline+=("$(format_to_string "$1")")
+    shift
+done
+
+run_subcmd_or_print "${cmdline[@]}"
 
 (( ! ${#cmdline[@]} )) || debug_run exec "${cmdline[@]}"
 

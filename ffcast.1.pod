@@ -32,7 +32,7 @@ configuration. See B<L<SUB-COMMANDS|/SUB-COMMANDS>>.
 All I<E<lt>argsE<gt>> are subject to format string substitution.
 See B<L<FORMAT STRINGS|/FORMAT STRINGS>>.
 
-If no I<E<lt>commandE<gt>> is given, a default B<ffmpeg> command line is used.
+If no I<E<lt>commandE<gt>> is given, the geometry of the selection is printed.
 
 =head1 OPTIONS
 
@@ -65,18 +65,6 @@ Print help message, then exit.
 =item B<-i>
 
 Combine selected regions by intersection instead of union.
-
-=item B<-m> I<E<lt>nE<gt>>
-
-Trim both dimensions of the region to be divisible by I<E<lt>nE<gt>>. By
-default, both dimensions are trimmed to be divisible by C<2>, which is
-required by B<x264>. A value of C<16> may help when encoding to most video
-codecs. A value of C<1> disables trimming.
-
-=item B<-p>
-
-Print geometry of the selected region and exit without executing
-I<E<lt>commandE<gt>>. The dimensions are not trimmed.
 
 =item B<-q>
 
@@ -194,14 +182,17 @@ window manager frame:
 
     ffcast -fw png screenshot-%s.png
 
-Screencast fullscreen on display C<:1>, using the default B<ffmpeg> command
-line, with debug messages:
+Use the sub-command B<rec> to record a fullscreen screencast on display C<:1>.
+The B<rec> sub-command accepts the B<-m> option, which crops the video so
+both its width and height are divisible by the given number, i.e. C<4> here:
 
-    DISPLAY=:1 ffcast -vv
+    DISPLAY=:1 ffcast -vv rec -m 4 screencast.mkv
 
-Screencast all three windows of B<GIMP>:
+Record a screencast of all three windows of B<GIMP>. This works because all
+selections are by default combined by union. Note also the usage of format
+strings here:
 
-    ffcast -www ffmpeg -f x11grab -show_region 1 -s %s -i %d+%c out.mp4
+    ffcast -www ffmpeg -f x11grab -show_region 1 -s %s -i %d+%c gimp.mp4
 
 Resize a window to the same size as another, by two mouse clicks:
 
