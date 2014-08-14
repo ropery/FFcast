@@ -194,8 +194,8 @@ both its width and height are divisible by the given number, i.e. C<4> here:
     DISPLAY=:1 ffcast -vv rec -m 4 screencast.mkv
 
 Record a screencast of all three windows of B<GIMP>. This works because all
-selections are by default combined by union. Note also the usage of format
-strings here:
+selections are by default combined by union. Note format strings are always
+substituted for external commands:
 
     ffcast -www ffmpeg -f x11grab -show_region 1 -s %s -i %d+%c gimp.mp4
 

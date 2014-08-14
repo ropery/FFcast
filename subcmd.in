@@ -27,7 +27,7 @@ subcmd_help() {
     if ! (( $# )); then
         for sub_cmd in "${!sub_commands[@]}"; do
             printf "%s\t%s\n" "$sub_cmd" "${sub_commands[$sub_cmd]}"
-        done | sort
+        done | sort -k 1,1
         return
     fi
     if [[ -v sub_commands[$sub_cmd] ]]; then

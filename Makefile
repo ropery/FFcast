@@ -1,6 +1,6 @@
 PACKAGE = FFcast
 PRGNAME = ffcast
-VERSION = 2.0.0-rc5
+VERSION = 2.0.0-rc6
 
 OUT = xrectsel
 SRC = $(wildcard *.c)
