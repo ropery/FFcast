@@ -61,11 +61,13 @@ sub_commands['each']='run a sub-command on each selection consecutively'
 sub_cmdfuncs['each']=subcmd_each
 subcmd_each() {
     local corners;
-    debug_array_by_key corners_list -1
     for corners in "${corners_list[@]}"; do
         corners=$(region_intersect_corners "$corners" '0,0 0,0')
-        debug %s "$(declare -p corners)"
-        set_region_vars_by_corners <<< "$corners"
+        if ! set_region_vars_by_corners <<< "$corners"; then
+            warn 'failure setting region vars from corners: %s' "$corners"
+            debug '%s' "$(declare -p corners {root,}{w,h} _{x,y} {x,y}_)"
+            continue
+        fi
         run_subcmd_or_print "$@"
     done
 }
