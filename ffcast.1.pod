@@ -206,8 +206,8 @@ Resize a window to the same size as another, by two mouse clicks:
 Take a screenshot of two windows combined, excluding anything invisible on
 head 0, using either of:
 
-    ffcast -i -x 0 -g "$(ffcast -wwp)" png
-    ffcast -m 1 -ww ffcast -i -x 0 -g %g png
+    ffcast -i -x 0 -g "$(ffcast -ww)" png
+    ffcast -ww ffcast -i -x 0 -g %g png
 
 Take three individual screenshots of heads 0, 1, 2, one by one. The B<each>
 command runs a command, i.e. B<png> here, for each user selection,
