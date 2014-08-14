@@ -12,13 +12,6 @@
 # This is useful in the cases when your sub-command isn't a valid function
 # name, or when it conflicts with an existing function.
 #
-# A sub-command function SHOULD in most cases set the cmdline array, which
-# holds the final command line to be executed by ffcast,
-#
-#     bar() {
-#         cmdline=(ffmpeg ...)
-#     }
-#
 # As this file is sourced after all the geometry processing has been done, you
 # have access to, among others, the variables $w $h $_x $_y $x_ $y_ and all the
 # functions defined in ffcast.
@@ -30,7 +23,6 @@ sub_commands['help']='print help for a sub-command, or list all sub-commands'
 sub_cmdfuncs['help']=subcmd_help
 subcmd_help() {
     : 'usage: help [sub-command]'
-    cmdline=()
     local sub_cmd=$1
     if ! (( $# )); then
         for sub_cmd in "${!sub_commands[@]}"; do
@@ -54,11 +46,8 @@ subcmd_help() {
     exit 1
 }
 
-sub_commands['%']='bypass predefined sub-commands, to avoid name conflicts'
-sub_cmdfuncs['%']=subcmd_nop
-subcmd_nop() {
-    cmdline=("$@")
-}
+sub_commands['%']='look up external command only; bypass sub-commands'
+sub_cmdfuncs['%']=run_external_command
 
 sub_commands['dump']='dump region-related variables in bash code'
 sub_cmdfuncs['dump']=subcmd_dump
@@ -66,18 +55,34 @@ subcmd_dump() {
     local i=0
     (( ! ${#head_ids[@]} )) || declare -p heads
     declare -p intersection corners{_list,} _{x,y} {x,y}_ {,root}{w,h}
-    cmdline=()
+}
+
+sub_commands['each']='run a sub-command on each selection consecutively'
+sub_cmdfuncs['each']=subcmd_each
+subcmd_each() {
+    local corners;
+    debug_array_by_key corners_list -1
+    for corners in "${corners_list[@]}"; do
+        corners=$(region_intersect_corners "$corners" '0,0 0,0')
+        debug %s "$(declare -p corners)"
+        set_region_vars_by_corners <<< "$corners"
+        run_subcmd_or_print "$@"
+    done
 }
 
 sub_commands['png']='take a screenshot and save it as a PNG image'
 sub_cmdfuncs['png']=subcmd_png
 subcmd_png() {
     : 'usage: png [filename]'
-    local outfile=${1:-screenshot-${w}x$h.png}
+    if [[ -n $1 ]]; then
+        outfile=$(format_to_string "$1")
+    else
+        outfile=$(printf '%s-%(%s)T_%dx%d.png' screenshot -1 "$w" "$h")
+    fi
     msg 'saving to file: %s' "$outfile"
-    cmdline=(ffmpeg -loglevel error -f x11grab -show_region 1 \
+    debug_run ffmpeg -loglevel error -f x11grab -show_region 1 \
         -video_size "${w}x$h" -i "$DISPLAY+$_x,$_y" -frames:v 1 \
-        -codec:v png -f image2 "$outfile")
+        -codec:v png -f image2 "$outfile"
 }
 
 sub_commands['rec']='record a screencast'
@@ -92,10 +97,14 @@ subcmd_rec() {
         esac
     done
     shift $(( OPTIND -1 ))
-    local outfile=${1:-"$(printf '%s-%(%s)T.mkv' '@PRGNAME@' -1)"}
-    cmdline=(ffmpeg -f x11grab -show_region 1 -framerate 25 -video_size \
+    if [[ -n $1 ]]; then
+        outfile=$(format_to_string "$1")
+    else
+        outfile=$(printf '%s-%(%s)T.mkv' screencast -1)
+    fi
+    debug_run ffmpeg -f x11grab -show_region 1 -framerate 25 -video_size \
         "${w}x$h" -i "$DISPLAY+$_x,$_y" -codec:v libx264 \
-        -vf crop="iw-mod(iw\\,$m):ih-mod(ih\\,$m)" "$outfile")
+        -vf crop="iw-mod(iw\\,$m):ih-mod(ih\\,$m)" "$outfile"
 }
 
 # vim:ts=4:sw=4:et:cc=80:

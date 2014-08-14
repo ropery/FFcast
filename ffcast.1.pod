@@ -6,7 +6,7 @@ ffcast - screencast an interactively selected region
 
 =over 4
 
-=item B<ffcast> [<options>] [<command> [<args>]]
+=item B<ffcast> [<options>] [<sub-command> [<args>]] [<command> [<args>]]
 
 =back
 
@@ -19,20 +19,17 @@ tools are typical examples of such command line tools.
 
 Typically, ffcast prompts the user to select a screen region and injects the
 geometry parameters thereof into the arguments of I<E<lt>commandE<gt>>, and
-then executes the resultant command line.
+then executes the resultant command line. This injection is done via format
+string substitution. See B<L<FORMAT STRINGS|/FORMAT STRINGS>>.
 
-ffcast maintains an internal list of predefined B<sub-commands>. If
-I<E<lt>commandE<gt>> matches one of them, predefined actions associated with
-the matching sub-command is performed; otherwise, I<E<lt>commandE<gt>> is
-executed as an external command. The B<%> sub-command can be used to prevent
-I<E<lt>commandE<gt>> from being executed as a sub-command, in the case of name
-conflicts. It's possible to add or override sub-commands via user
+ffcast maintains an internal list of predefined B<sub-commands>, which is
+looked up before all external commands. Use the B<help> sub-command to get a
+list of all sub-commands. To bypass sub-command lookup, use the B<%>
+sub-command. It's possible to add or override sub-commands via user
 configuration. See B<L<SUB-COMMANDS|/SUB-COMMANDS>>.
 
-All I<E<lt>argsE<gt>> are subject to format string substitution.
-See B<L<FORMAT STRINGS|/FORMAT STRINGS>>.
-
-If no I<E<lt>commandE<gt>> is given, the geometry of the selection is printed.
+If neither I<E<lt>sub-commandE<gt>> nor I<E<lt>commandE<gt>> is given, the
+geometry of the selection is printed.
 
 =head1 OPTIONS
 
@@ -91,6 +88,13 @@ C<list> to get a list of head IDs and the corresponding geometry parameters.
 =back
 
 =head1 FORMAT STRINGS
+
+All I<E<lt>argsE<gt>> to an external I<E<lt>commandE<gt>> are always subject
+to format string substitution.
+
+All I<E<lt>argsE<gt>> to an internal I<E<lt>sub-commandE<gt>> are not
+automatically subject to format string substitution, although sub-commands may
+choose to do format string substitution on their own.
 
 The following format strings are supported:
 
@@ -178,7 +182,8 @@ List all sub-commands with brief description:
     ffcast help
 
 Use the sub-command B<png> to take a screenshot of a window, including its
-window manager frame:
+window manager frame. Note the B<png> sub-command supports format string
+substitution:
 
     ffcast -fw png screenshot-%s.png
 
@@ -203,6 +208,12 @@ head 0, using either of:
 
     ffcast -i -x 0 -g "$(ffcast -wwp)" png
     ffcast -m 1 -ww ffcast -i -x 0 -g %g png
+
+Take three individual screenshots of heads 0, 1, 2, one by one. The B<each>
+command runs a command, i.e. B<png> here, for each user selection,
+consecutively.
+
+    ffcast -x 0,1,2 each png head_%g.png
 
 =head1 AUTHOR
 

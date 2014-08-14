@@ -80,7 +80,7 @@ debug_array_by_key() {
 
 debug_dryrun() {
     (( verbosity >=2 )) || return 0
-    _quote_cmd_line 'debug: command: ' "$@"
+    _quote_cmd_line 'debug: cmdline: ' "$@"
 } >&2
 
 debug_run() {
@@ -330,21 +330,36 @@ xwininfo_get_corners() {
     printf '%d,%d %d,%d\n' $_x $_y $x_ $y_
 }
 
+run_external_command() {
+    local -- cmd=$1
+    shift || return 0
+    local -a args=()
+    # always substitute format strings for external commands
+    while (( $# )); do
+        args+=("$(format_to_string "$1")")
+        shift
+    done
+    debug_run command "$cmd" "${args[@]}"
+}
+
 run_subcmd_or_print() {
     local sub_cmd=$1
     if [[ -z $sub_cmd ]]; then
         printf "%dx%d+%d+%d\n" $w $h $_x $_y
         exit
-    elif [[ -v sub_commands[$sub_cmd] ]]; then
+    fi
+    if [[ -v sub_commands[$sub_cmd] ]]; then
         shift
         local sub_cmd_func=${sub_cmdfuncs[$sub_cmd]:-$sub_cmd}
         if [[ $(type -t "$sub_cmd_func") == function ]]; then
-            "$sub_cmd_func" "$@"
+            debug_run "$sub_cmd_func" "$@"
         else
             error "sub-command '%s' function '%s' not found" "$sub_cmd" \
                 "$sub_cmd_func"
             exit 1
         fi
+    else
+        run_external_command "$@"
     fi
 }
 
@@ -361,7 +376,7 @@ usage() {
     cat <<EOF
 @PRGNAME@ @VERSION@
 Usage:
-  ${0##*/} [options] [command [args]]
+  ${0##*/} [options] [sub-command [args]] [command [args]]
 
   Options:
     -g <geospec> specify a region in numeric geometry
@@ -379,7 +394,6 @@ Usage:
   All the options can be repeated, and are processed in order.
   Selections are combined by union, unless -i is specified.
   If no region-selecting options are given, select fullscreen.
-  Command arguments are subject to format string substitution.
 EOF
   exit $1
 }
@@ -523,19 +537,21 @@ for srcdir in "${srcdirs[@]}"; do
         . "$subcmdsrc"
     fi
 done
+unset -v srcdir subcmdsrc
+
+# make sure these are not defined as sub-commands
+for cmd in builtin command; do
+    unset -f $cmd
+    if [[ -v sub_commands[$cmd] ]]; then
+        unset -v sub_commands[$cmd]
+        warn 'unset sub-command %s' "$cmd"
+    fi
+done
+unset -v cmd
 
 #---
 # Now with the geometry sorted out, we're ready to execute the sub-command
 
-declare -a cmdline=()
-
-while (( $# )); do
-    cmdline+=("$(format_to_string "$1")")
-    shift
-done
-
-run_subcmd_or_print "${cmdline[@]}"
-
-(( ! ${#cmdline[@]} )) || debug_run exec "${cmdline[@]}"
+run_subcmd_or_print "$@"
 
 # vim:ts=4:sw=4:et:cc=80:
