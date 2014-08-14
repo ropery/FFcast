@@ -159,10 +159,11 @@ parse_geospec_get_corners() {
     local n='?([-+])+([0-9])'
     local m='?(-)+([0-9])'
     local N='+([0-9])'
+    local s='@(*([ \t]),*([ \t])|+([ \t]))'
     # strip whitespaces
     IFS=$' \t' read -r geospec <<< "$geospec"
     case $geospec in
-        $n,$n+([' \t'])$n,$n)  # x1,y1 x2,y2
+        $n$s$n$s$n$s$n)  # x1,y1 x2,y2
             IFS=$', \t' read _x _y x_ y_ <<< "$geospec"
             ;;
         ${N}x${N}\+${m}\+${m})  # wxh+x+y
