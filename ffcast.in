@@ -28,14 +28,24 @@ trap -- 'trap_err $LINENO' ERR
 
 readonly -a \
     srcdirs=({/usr/lib,/etc,"${XDG_CONFIG_HOME:-$HOME/.config}"}/'@PRGNAME@')
+readonly -a logl=(error warn msg verbose debug)
+declare -A 'logp=([warn]="warning" [msg]=":")'
+declare -i verbosity=2
 declare -A sub_commands=() sub_cmdfuncs=()
 declare -a head_ids=() geospecs=() window_ids=()
 declare -- region_select_action=
 declare -i borders=0 frame=0 intersection=0
-declare -i verbosity=0
 
 #---
 # Functions
+
+msg_colors_on() {
+    logp[error]=$'\e[1;31m''error'$'\e[m'
+    logp[warn]=$'\e[1;33m''warning'$'\e[m'
+    logp[msg]=$'\e[34m'':'$'\e[m'
+    logp[verbose]=$'\e[32m''verbose'$'\e[m'
+    logp[debug]=$'\e[36m''debug'$'\e[m'
+}
 
 trap_err() {
     set -- "$1" "${PIPESTATUS[@]}"
@@ -73,44 +83,27 @@ _report_array_by_key() {
 }
 
 debug_array_by_key() {
-    (( verbosity >= 2 )) || return 0
-    printf 'debug: '
+    (( verbosity >= 4 )) || return 0
+    printf "${logp[debug]}: "
     _report_array_by_key "$@"
 } >&2
 
-debug_dryrun() {
-    (( verbosity >=2 )) || return 0
-    _quote_cmd_line 'debug: cmdline: ' "$@"
-} >&2
+for ((i=0; i<${#logl[@]}; ++i)) ; do
+    eval "${logl[i]}() {
+        (( verbosity >= $i )) || return 0
+        _msg \"\${logp[${logl[i]}]-${logl[i]}}: \" \"\$@\"
+    } >&2"
+done
 
-debug_run() {
-    debug_dryrun "$@" && "$@"
-}
-
-debug() {
-    (( verbosity >= 2 )) || return 0
-    _msg 'debug: ' "$@"
-} >&2
-
-verbose() {
-    (( verbosity >= 1 )) || return 0
-    _msg 'verbose: ' "$@"
-} >&2
-
-msg() {
-    (( verbosity >= 0 )) || return 0
-    _msg ':: ' "$@"
-} >&2
-
-warn() {
-    (( verbosity >= -1 )) || return 0
-    _msg 'warning: ' "$@"
-} >&2
-
-error() {
-    (( verbosity >= -1 )) || return 0
-    _msg 'error: ' "$@"
-} >&2
+for ((i=3; i<${#logl[@]}; ++i)) ; do
+    eval "${logl[i]}_dryrun() {
+        (( verbosity >= $i )) || return 0
+        _quote_cmd_line \"\${logp[${logl[i]}]-${logl[i]}}: cmdline: \" \"\$@\"
+    } >&2
+    ${logl[i]}_run() {
+        ${logl[i]}_dryrun \"\$@\" &&  \"\$@\"
+    }"
+done
 
 format_to_string() {
     local fmt=$1 str c
@@ -229,7 +222,7 @@ select_window_get_corners() {
 }
 
 window_id_get_corners() {
-    verbose "get corners by window ID %x" "$1"
+    msg "get corners by window ID %x" "$1"
     LC_ALL=C xwininfo -id "$1" | xwininfo_get_corners
 }
 
@@ -330,6 +323,10 @@ xwininfo_get_corners() {
     printf '%d,%d %d,%d\n' $_x $_y $x_ $y_
 }
 
+run_default_command() {
+    printf "%dx%d+%d+%d\n" $w $h $_x $_y
+}
+
 run_external_command() {
     local -- cmd=$1
     shift || return 0
@@ -339,20 +336,20 @@ run_external_command() {
         args+=("$(format_to_string "$1")")
         shift
     done
-    debug_run command "$cmd" "${args[@]}"
+    verbose_run command "$cmd" "${args[@]}"
 }
 
 run_subcmd_or_print() {
     local sub_cmd=$1
     if [[ -z $sub_cmd ]]; then
-        printf "%dx%d+%d+%d\n" $w $h $_x $_y
+        run_default_command
         exit
     fi
     if [[ -v sub_commands[$sub_cmd] ]]; then
         shift
         local sub_cmd_func=${sub_cmdfuncs[$sub_cmd]:-$sub_cmd}
         if [[ $(type -t "$sub_cmd_func") == function ]]; then
-            debug_run "$sub_cmd_func" "$@"
+            verbose_run "$sub_cmd_func" "$@"
         else
             error "sub-command '%s' function '%s' not found" "$sub_cmd" \
                 "$sub_cmd_func"
@@ -364,13 +361,25 @@ run_subcmd_or_print() {
 }
 
 set_region_vars_by_corners() {
-    IFS=' ,' read _x _y x_ y_
-    (( w = rootw - _x - x_ ))
-    (( h = rooth - _y - y_ ))
+    if [[ ! -v corners ]]; then
+        "${logl[${1:- 0}]}" '$corners is unset'
+        return 1
+    fi
+    if ! printf '%s\n' "$corners" | IFS=' ,' read _x _y x_ y_; then
+        "${logl[${1:- 0}]}" 'bad corners: %s' "$corners"
+        return 1
+    fi
+    if ! (( (w = rootw - _x - x_) && (h = rooth - _y - y_) )); then
+        "${logl[${1:- 0}]}" 'invalid region size: %sx%s' "$w" "$h"
+        debug '%s' "$(declare -p {root,}{w,h} _{x,y} {x,y}_)"
+        return 1
+    fi
 }
 
 #---
 # Process arguments passed to ffcast
+
+[[ ! -t 2 ]] || msg_colors_on
 
 usage() {
     cat <<EOF
@@ -507,13 +516,13 @@ done
 if (( i )); then
     if (( intersection )); then
         corners=$(region_intersect_corners "${corners_list[@]}")
-        debug "intersection(user_selections) -> corners=%q" "${corners}"
+        debug "intersection(corners_list[@]) -> corners=%q" "${corners}"
     else
         corners=$(region_union_corners "${corners_list[@]}")
-        debug "union(user_selections) -> corners=%q" "${corners}"
+        debug "union(corners_list[@]) -> corners=%q" "${corners}"
     fi
     corners=$(region_intersect_corners "$corners" '0,0 0,0')
-    debug "intersection_with(root_window) -> corners=%q" "${corners}"
+    debug "corners.intersection('0,0 0,0') -> corners=%q" "${corners}"
 else
     corners='0,0 0,0'
     verbose 'no valid user selection, falling back to fullscreen'
@@ -521,19 +530,18 @@ else
     debug '%s' "$(declare -p corners_list)"
 fi
 
-if ! set_region_vars_by_corners <<< "$corners"; then
-    error 'failure setting region vars from corners'
-    debug '%s' "$(declare -p corners {root,}{w,h} _{x,y} {x,y}_)"
-    exit 1
-fi
+set_region_vars_by_corners || exit 1
 
 #---
 # Import predefined sub-commands
 
+# a little optimization
+(( $# )) || { run_default_command; exit; }
+
 for srcdir in "${srcdirs[@]}"; do
     subcmdsrc=$srcdir/subcmd
     if [[ -r $subcmdsrc ]]; then
-        debug "importing sub-commands from file %s" "$subcmdsrc"
+        verbose "importing sub-commands from file %s" "$subcmdsrc"
         . "$subcmdsrc"
     fi
 done
@@ -550,7 +558,7 @@ done
 unset -v cmd
 
 #---
-# Now with the geometry sorted out, we're ready to execute the sub-command
+# Execute
 
 run_subcmd_or_print "$@"
 

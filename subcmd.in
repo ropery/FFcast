@@ -63,11 +63,7 @@ subcmd_each() {
     local corners;
     for corners in "${corners_list[@]}"; do
         corners=$(region_intersect_corners "$corners" '0,0 0,0')
-        if ! set_region_vars_by_corners <<< "$corners"; then
-            warn 'failure setting region vars from corners: %s' "$corners"
-            debug '%s' "$(declare -p corners {root,}{w,h} _{x,y} {x,y}_)"
-            continue
-        fi
+        set_region_vars_by_corners 1 || continue
         run_subcmd_or_print "$@"
     done
 }
@@ -82,7 +78,7 @@ subcmd_png() {
         outfile=$(printf '%s-%(%s)T_%dx%d.png' screenshot -1 "$w" "$h")
     fi
     msg 'saving to file: %s' "$outfile"
-    debug_run ffmpeg -loglevel error -f x11grab -show_region 1 \
+    verbose_run ffmpeg -loglevel error -f x11grab -show_region 1 \
         -video_size "${w}x$h" -i "$DISPLAY+$_x,$_y" -frames:v 1 \
         -codec:v png -f image2 "$outfile"
 }
@@ -104,7 +100,7 @@ subcmd_rec() {
     else
         outfile=$(printf '%s-%(%s)T.mkv' screencast -1)
     fi
-    debug_run ffmpeg -f x11grab -show_region 1 -framerate 25 -video_size \
+    verbose_run ffmpeg -f x11grab -show_region 1 -framerate 25 -video_size \
         "${w}x$h" -i "$DISPLAY+$_x,$_y" -codec:v libx264 \
         -vf crop="iw-mod(iw\\,$m):ih-mod(ih\\,$m)" "$outfile"
 }
