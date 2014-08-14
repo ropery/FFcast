@@ -77,9 +77,9 @@ _quote_cmd_line() {
 
 _report_array_by_key() {
     local varname=$1
-    local -n array=$1
+    local -n ref_array=$1
     local key=$2
-    printf "%q[%q]=%q\n" "$varname" "$key" "${array[$key]}"
+    printf "%q[%q]=%q\n" "$varname" "$key" "${ref_array[$key]}"
 }
 
 debug_array_by_key() {
@@ -138,12 +138,12 @@ format_to_string() {
 # $3: array variable of head IDs, e.g. =(0 1 2)
 # $4: array variable to assign bad head IDs to, e.g. =(2)
 heads_get_corners_list_by_ref() {
-    eval local heads=\(\"\$\{$2\[@\]\}\"\)
-    eval local head_ids=\(\"\$\{$3\[@\]\}\"\)
-    local i w h _x _y x_ y_
-    for i in "${head_ids[@]}"; do
-        if [[ -n ${heads[i]} ]]; then
-            IFS='x+' read w h _x _y <<< "${heads[i]}"
+    local -n ref_heads=$2
+    local -n ref_head_ids=$3
+    local -- i w h _x _y x_ y_
+    for i in "${ref_head_ids[@]}"; do
+        if [[ -n ${ref_heads[i]} ]]; then
+            IFS='x+' read w h _x _y <<< "${ref_heads[i]}"
             (( x_ = rootw - _x - w )) || :
             (( y_ = rooth - _y - h )) || :
             printf -v "$1[$i]" "%d,%d %d,%d" $_x $_y $x_ $y_
