@@ -48,7 +48,8 @@ Include borders of windows to be selected.
 
 =item B<-f>
 
-Include window manager frame of windows to be selected.
+Include window manager frame of windows to be selected. The window manager
+must support B<_NET_FRAME_EXTENTS>.
 
 =item B<-g> I<E<lt>geospecE<gt>>
 
@@ -83,7 +84,8 @@ Prompt to select a window.
 
 Select a B<Xinerama> head of ID I<E<lt>nE<gt>>. Multiple heads can be
 specified either as a comma-separated list, or by repeating this option. Use
-C<list> to get a list of head IDs and the corresponding geometry parameters.
+C<list> or C<l> to get a list of head IDs and the corresponding geometry
+parameters.
 
 =back
 

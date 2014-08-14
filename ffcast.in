@@ -133,20 +133,20 @@ format_to_string() {
     printf %s "$str";
 }
 
-# $1: array variable to assign corners list to, i.e. =([id]=corners ...)
-# $2: array variable of heads, e.g. =([0]=1440x900+0+124 [1]=1280x1024+1440+0)
-# $3: array variable of head IDs, e.g. =(0 1 2)
+# $1: array variable of heads, e.g. =([0]=1440x900+0+124 [1]=1280x1024+1440+0)
+# $2: array variable of head IDs, e.g. =(0 1 2)
+# $3: array variable to assign corners list to, i.e. =([id]=corners ...)
 # $4: array variable to assign bad head IDs to, e.g. =(2)
 heads_get_corners_list_by_ref() {
-    local -n ref_heads=$2
-    local -n ref_head_ids=$3
+    local -n ref_heads=$1
+    local -n ref_head_ids=$2
     local -- i w h _x _y x_ y_
     for i in "${ref_head_ids[@]}"; do
         if [[ -n ${ref_heads[i]} ]]; then
             IFS='x+' read w h _x _y <<< "${ref_heads[i]}"
             (( x_ = rootw - _x - w )) || :
             (( y_ = rooth - _y - h )) || :
-            printf -v "$1[$i]" "%d,%d %d,%d" $_x $_y $x_ $y_
+            printf -v "$3[$i]" "%d,%d %d,%d" $_x $_y $x_ $y_
         else
             printf -v "$4[$i]" %d $i
         fi
@@ -178,7 +178,7 @@ parse_geospec_get_corners() {
     printf '%d,%d %d,%d\n' $_x $_y $x_ $y_
 }
 
-# Note: without knowlege of the size root window, it's not possible to
+# Note: without knowlege of the size of the root window, it's not possible to
 # determine whether the resulting corner offsets define a valid region.
 # The resulting geometry must be checked in the context of the root window.
 region_intersect_corners() {
@@ -240,8 +240,7 @@ xdpyinfo_get_heads_by_ref() {
     local head="head #$n: ${n}x$n @ $n,$n"
     while IFS=' ' read -r line; do
         if [[ $line == $head ]]; then
-            line=${line#head #}
-            IFS=' :x@,' read i w h x y <<< "$line"
+            IFS=' :x@,' read i w h x y <<< "${line#head #}"
             printf -v "$1[$i]" "%dx%d+%d+%d" $w $h $x $y
         fi
     done
@@ -253,7 +252,7 @@ xdpyinfo_list_heads() {
 }
 
 # stdout: left, right, top, bottom
-# $1: window id
+# $1: window ID
 xprop_get_frame_extents() {
     xprop -id "$1" -notype _NET_FRAME_EXTENTS |
     grep '^_NET_FRAME_EXTENTS = ' | sed 's/.*= //'
@@ -398,7 +397,7 @@ Usage:
     -s           select a rectangular region by mouse
     -w           select a window by mouse click
     -# <n>       select a window by window ID
-    -x <n|list>  select the Xinerama head of id n
+    -x <n|list>  select the Xinerama head of ID n
     -b           include window borders hereafter
     -f           include window frame hereafter
     -i           combine regions by intersection
@@ -422,12 +421,12 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
         w) region_select_action+='w';;
        \#) region_select_action+='#'; window_ids+=("$OPTARG");;
         x)
-            if [[ $OPTARG == 'list' ]]; then
+            if [[ $OPTARG == l?(ist) ]]; then
                 xdpyinfo_list_heads
                 exit
             fi
-            IFS=' ,' read -a _head_ids <<< "$OPTARG"
-            for i in "${_head_ids[@]}"; do
+            IFS=' ,' read -a ids <<< "$OPTARG"
+            for i in "${ids[@]}"; do
                 if [[ $i != +([0-9]) ]]; then
                     error "invalid head IDs: \'%s'" "$OPTARG"
                     exit 1
@@ -470,14 +469,14 @@ if (( ${#head_ids[@]} )); then
         exit 1
     fi
     debug '%s' "$(declare -p heads)"
-    heads_get_corners_list_by_ref corners_list heads head_ids head_ids_bad
+    heads_get_corners_list_by_ref heads head_ids corners_list head_ids_bad
     debug '%s' "$(declare -p corners_list)"
     if (( ! ${#corners_list[@]} )); then
         error 'none of the specified head IDs exists'
         exit 1
     fi
     if (( ${#head_ids_bad[@]} )); then
-        warn "ignored non-existent head ids: %s" "${head_ids_bad[*]}"
+        warn "ignored non-existent head IDs: %s" "${head_ids_bad[*]}"
     fi
     corners_list=("${corners_list[@]}")  # indexing
     i=${#corners_list[@]}
