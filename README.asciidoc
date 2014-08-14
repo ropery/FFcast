@@ -1,9 +1,20 @@
 FFcast
 ======
 
+NOTE: Users of FFcast 1.0 will have to update their command lines. See issue #8.
+
 FFcast helps the user interactively select a screen region and hands over the
 geometry to an external command, such as FFmpeg, to record a screencast, or
 take a screenshot, among other things.
+
+FFcast is a historical name. To say "FFcast wraps around FFmpeg" is as good as
+saying "XBMC runs on Xbox". Sure, FFmpeg is a fine thing to wrap around, but
+FFcast can wrap around a lot of things.
+
+FFcast really is a "handy" or "human friendly" interface for anything involving
+selecting a box on the screen. In the same spirit, it tries to provide handy
+terse commands for common tasks, and allows users to define their own commands,
+in a straight-forward manner, to tailor to their own needs.
 
 Requirements
 ------------
