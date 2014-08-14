@@ -178,6 +178,9 @@ parse_geospec_get_corners() {
     printf '%d,%d %d,%d\n' $_x $_y $x_ $y_
 }
 
+# Note: without knowlege of the size root window, it's not possible to
+# determine whether the resulting corner offsets define a valid region.
+# The resulting geometry must be checked in the context of the root window.
 region_intersect_corners() {
     local corners
     local _x _y x_ y_
@@ -370,7 +373,9 @@ set_region_vars_by_corners() {
         "${logl[${1:- 0}]}" 'bad corners: %s' "$corners"
         return 1
     fi
-    if ! (( (w = rootw - _x - x_) && (h = rooth - _y - y_) )); then
+    ((w = rootw - _x - x_)) || :
+    ((h = rooth - _y - y_)) || :
+    if ! ((  w > 0 && h > 0 )); then
         "${logl[${1:- 0}]}" 'invalid region size: %sx%s' "$w" "$h"
         debug '%s' "$(declare -p {root,}{w,h} _{x,y} {x,y}_)"
         return 1
