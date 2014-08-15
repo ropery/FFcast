@@ -28,7 +28,7 @@ all: $(BINPROGS) $(LIBSTUFF) $(MANPAGES)
 $(OUT): $(OBJ)
 	$(CC) -o $@ $(OBJ) $(LDFLAGS)
 
-%: %.in
+%: %.bash
 	sed -e 's/@VERSION@/$(VERSION)/g' \
 		-e 's/@PRGNAME@/$(PRGNAME)/g' $< > $@ && chmod go-w,+x $@
 
