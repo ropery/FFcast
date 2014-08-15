@@ -342,7 +342,7 @@ run_external_command() {
     verbose_run command "$cmd" "${args[@]}"
 }
 
-run_subcmd_or_print() {
+run_subcmd_or_command() {
     local sub_cmd=$1
     if [[ -z $sub_cmd ]]; then
         run_default_command
@@ -565,6 +565,6 @@ unset -v cmd
 #---
 # Execute
 
-run_subcmd_or_print "$@"
+run_subcmd_or_command "$@"
 
 # vim:ts=4:sw=4:et:cc=80:

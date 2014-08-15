@@ -64,7 +64,7 @@ subcmd_each() {
     for corners in "${corners_list[@]}"; do
         corners=$(region_intersect_corners "$corners" '0,0 0,0')
         set_region_vars_by_corners 1 || continue
-        run_subcmd_or_print "$@"
+        run_subcmd_or_command "$@"
     done
 }
 
