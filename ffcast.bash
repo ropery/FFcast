@@ -439,8 +439,8 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
         b) region_select_action+='b';;
         f) region_select_action+='f';;
         i) intersection=1;;
-        q) (( verbosity-- )) || :;;
-        v) (( verbosity++ )) || :;;
+        q) (( (verbosity > 0) && verbosity-- )) || :;;
+        v) (( (verbosity < ${#logl[@]}-1) && verbosity++ )) || :;;
         '?') error "invalid option: \`%s'" "$OPTARG"; exit 1;;
         ':') error "option requires an argument: \`%s'" "$OPTARG"; exit 1;;
     esac

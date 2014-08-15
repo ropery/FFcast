@@ -72,22 +72,25 @@ sub_commands['png']='take a screenshot and save it as a PNG image'
 sub_cmdfuncs['png']=subcmd_png
 subcmd_png() {
     : 'usage: png [filename]'
+    local outfile
     if [[ -n $1 ]]; then
         outfile=$(format_to_string "$1")
     else
         outfile=$(printf '%s-%(%s)T_%dx%d.png' screenshot -1 "$w" "$h")
     fi
     msg 'saving to file: %s' "$outfile"
-    verbose_run ffmpeg -loglevel error -f x11grab -show_region 1 \
-        -video_size "${w}x$h" -i "$DISPLAY+$_x,$_y" -frames:v 1 \
-        -codec:v png -f image2 "$outfile"
+    verbose_run command \
+        ffmpeg -loglevel error -f x11grab -show_region 1 \
+        -video_size "${w}x$h" -i "$DISPLAY+$_x,$_y" \
+        -f image2 -codec:v png -frames:v 1 "$outfile"
 }
 
 sub_commands['rec']='record a screencast'
 sub_cmdfuncs['rec']=subcmd_rec
 subcmd_rec() {
     : 'usage: rec [-m <n>] [filename.ext]'
-    local m=1 opt
+    local -a v=(fatal error info verbose debug)  # ffmpeg loglevels
+    local m=1 opt outfile
     OPTIND=1
     while getopts ':m:' opt; do
         case $opt in
@@ -100,9 +103,12 @@ subcmd_rec() {
     else
         outfile=$(printf '%s-%(%s)T.mkv' screencast -1)
     fi
-    verbose_run ffmpeg -f x11grab -show_region 1 -framerate 25 -video_size \
-        "${w}x$h" -i "$DISPLAY+$_x,$_y" -codec:v libx264 \
-        -vf crop="iw-mod(iw\\,$m):ih-mod(ih\\,$m)" "$outfile"
+    msg 'saving to file: %s' "$outfile"
+    verbose_run command \
+        ffmpeg -loglevel "${v[verbosity]}" -f x11grab -show_region 1 \
+        -framerate 25 -video_size "${w}x$h" -i "$DISPLAY+$_x,$_y" \
+        -codec:v libx264 -filter:v crop="iw-mod(iw\\,$m):ih-mod(ih\\,$m)" \
+        "$outfile"
 }
 
 # vim:ts=4:sw=4:et:cc=80:
