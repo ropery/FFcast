@@ -266,7 +266,7 @@ xrectsel_get_corners() {
 
 # stdin: xwininfo output (locale: C)
 # stdout: ${width}x${height}
-xwininfo_get_dimensions() {
+xwininfo_get_size() {
     local line
     local w h
     while IFS=$' \t' read -r line; do
@@ -363,20 +363,20 @@ run_subcmd_or_command() {
     fi
 }
 
-set_region_vars_by_corners() {
-    if [[ ! -v corners ]]; then
-        "${logl[${1:- 0}]}" '$corners is unset'
-        return 1
-    fi
-    if ! printf '%s\n' "$corners" | IFS=' ,' read _x _y x_ y_; then
-        "${logl[${1:- 0}]}" 'bad corners: %s' "$corners"
-        return 1
-    fi
-    ((w = rootw - _x - x_)) || :
-    ((h = rooth - _y - y_)) || :
+set_region_vars_by_offsets() {
+    (( _x = _x < 0 ? 0 : _x )) || :
+    (( _y = _y < 0 ? 0 : _y )) || :
+    (( x_ = x_ < 0 ? 0 : x_ )) || :
+    (( y_ = y_ < 0 ? 0 : y_ )) || :
+    (( w = rootw - _x - x_ )) || :
+    (( h = rooth - _y - y_ )) || :
+    local var
+    debug 'set region variables'
+    for var in w h _{x,y} {x,y}_; do
+        debug '\t%s' "$(declare -p "$var")"
+    done
     if ! ((  w > 0 && h > 0 )); then
         "${logl[${1:- 0}]}" 'invalid region size: %sx%s' "$w" "$h"
-        debug '%s' "$(declare -p {root,}{w,h} _{x,y} {x,y}_)"
         return 1
     fi
 }
@@ -451,12 +451,16 @@ shift $(( OPTIND -1 ))
 # Process region geometry
 
 declare rootw=0 rooth=0 _x=0 _y=0 x_=0 y_=0 w=0 h=0
-LC_ALL=C xwininfo -root | xwininfo_get_dimensions | IFS=x read rootw rooth
+LC_ALL=C xwininfo -root | xwininfo_get_size | IFS=x read rootw rooth
 
-# Note: this is safe because xwininfo_get_dimensions ensures that its output is
+debug 'got root window size'
+debug '\t%s' "$(declare -p rootw)"
+debug '\t%s' "$(declare -p rooth)"
+
+# Note: this is safe because xwininfo_get_size ensures that its output is
 # either {int}x{int} or null, a random string like "rootw" is impossible.
 if ! (( rootw && rooth )); then
-    error 'invalid root window dimensions: %dx%d' "$rootw" "$rooth"
+    error 'invalid root window size: %dx%d' "$rootw" "$rooth"
     exit 1
 fi
 
@@ -526,8 +530,6 @@ if (( i )); then
         corners=$(region_union_corners "${corners_list[@]}")
         debug "union(corners_list[@]) -> corners=%q" "${corners}"
     fi
-    corners=$(region_intersect_corners "$corners" '0,0 0,0')
-    debug "corners.intersection('0,0 0,0') -> corners=%q" "${corners}"
 else
     corners='0,0 0,0'
     verbose 'no valid user selection, falling back to fullscreen'
@@ -535,7 +537,8 @@ else
     debug '%s' "$(declare -p corners_list)"
 fi
 
-set_region_vars_by_corners || exit 1
+IFS=' ,' read _x _y x_ y_ <<< "$corners"
+set_region_vars_by_offsets || exit
 
 #---
 # Import predefined sub-commands

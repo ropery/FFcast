@@ -189,6 +189,12 @@ substitution:
 
     ffcast -fw png screenshot-%s.png
 
+The B<-f> option works only if the window manager supports
+B<_NET_FRAME_EXTENTS>. A workaround is to use the B<pad> sub-command to
+explicitly pad the region with the size of the frame:
+
+    ffcast -w pad '20 2 2' png screenshot_%s.png
+
 Use the sub-command B<rec> to record a fullscreen screencast on display C<:1>.
 The B<rec> sub-command accepts the B<-m> option, which crops the video so
 both its width and height are divisible by the given number, i.e. C<4> here:

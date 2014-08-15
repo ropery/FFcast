@@ -60,12 +60,40 @@ subcmd_dump() {
 sub_commands['each']='run a sub-command on each selection consecutively'
 sub_cmdfuncs['each']=subcmd_each
 subcmd_each() {
+    : 'usage: each [sub-command]'
     local corners;
     for corners in "${corners_list[@]}"; do
-        corners=$(region_intersect_corners "$corners" '0,0 0,0')
-        set_region_vars_by_corners 1 || continue
+        IFS=' ,' read _x _y x_ y_ <<< "$corners"
+        set_region_vars_by_offsets 1 || continue
         run_subcmd_or_command "$@"
     done
+}
+
+sub_commands['pad']='Add CSS-style padding to region'
+sub_cmdfuncs['pad']=subcmd_pad
+subcmd_pad() {
+    : 'usage: pad <padding> [sub-command]'
+    local -- t r b l
+    IFS=' \t,' read -r t r b l <<< $1
+    shift || return 0
+    if [[ -z $t ]]; then
+        return
+    elif [[ -z $r ]]; then
+        local -i t=$t r=$t b=$t l=$t
+    elif [[ -z $b ]]; then
+        local -i t=$t r=$r b=$t l=$r
+    elif [[ -z $l ]]; then
+        local -i t=$t r=$r b=$b l=$r
+    else
+        local -i t=$t r=$r b=$b l=$l
+    fi
+    (( _x -= l )) || :
+    (( _y -= t )) || :
+    (( x_ -= r )) || :
+    (( y_ -= b )) || :
+    verbose 'padding: top=%d right=%d bottom=%d left=%d' $t $r $b $l
+    set_region_vars_by_offsets || exit
+    run_subcmd_or_command "$@"
 }
 
 sub_commands['png']='take a screenshot and save it as a PNG image'
