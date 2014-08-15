@@ -91,6 +91,7 @@ subcmd_pad() {
     (( x_ -= r )) || :
     (( y_ -= b )) || :
     verbose 'padding: top=%d right=%d bottom=%d left=%d' $t $r $b $l
+    offsets="$_x $_y $x_ $y_"
     set_region_vars_by_offsets || exit
     run_subcmd_or_command "$@"
 }

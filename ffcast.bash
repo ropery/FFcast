@@ -228,13 +228,13 @@ xdpyinfo_get_heads_by_ref() {
 }
 
 xdpyinfo_list_heads() {
-    xdpyinfo -ext XINERAMA | grep '^  head #' | sed 's/^ *//'
+    LC_ALL=C xdpyinfo -ext XINERAMA | grep '^  head #' | sed 's/^ *//'
 }
 
 # stdout: left, right, top, bottom
 # $1: window ID
 xprop_get_frame_extents() {
-    xprop -id "$1" -notype _NET_FRAME_EXTENTS |
+    LC_ALL=C xprop -id "$1" -notype _NET_FRAME_EXTENTS |
     grep '^_NET_FRAME_EXTENTS = ' | sed 's/.*= //'
 }
 
@@ -361,7 +361,7 @@ set_region_vars_by_offsets() {
 }
 
 #---
-# Process arguments passed to ffcast
+# Process command line options
 
 [[ ! -t 2 ]] || msg_colors_on
 

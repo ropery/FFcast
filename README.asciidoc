@@ -22,11 +22,11 @@ Requirements
 .FFcast
 
   * Bash 4.3+
-  * FFmpeg
-  * xdpyinfo - for the -x option
-  * xprop    - for the -f option
-  * xrectsel - for the -s option (included)
-  * xwininfo - for the -w option
+  * FFmpeg   - for some sub-commands (`png`, `rec`)
+  * xdpyinfo - for the `-x` option
+  * xprop    - for the `-f` option
+  * xrectsel - for the `-s` option (included)
+  * xwininfo - for the `-w` option
 
 .xrectsel
 
