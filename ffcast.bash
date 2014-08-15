@@ -30,11 +30,11 @@ readonly -a \
     srcdirs=({/usr/lib,/etc,"${XDG_CONFIG_HOME:-$HOME/.config}"}/'@PRGNAME@')
 readonly -a logl=(error warn msg verbose debug)
 declare -A 'logp=([warn]="warning" [msg]=":")'
-declare -i verbosity=2
+declare -- verbosity=2
 declare -A sub_commands=() sub_cmdfuncs=()
 declare -a head_ids=() geospecs=() window_ids=()
 declare -- region_select_action=
-declare -i borders=0 frame=0 intersection=0
+declare -- borders=0 frame=0 intersection=0
 
 #---
 # Functions
@@ -133,11 +133,28 @@ format_to_string() {
     printf %s "$str";
 }
 
+printf '%s %s\n' max '>' min '<' | while IFS=' ' read -r mom cmp; do
+    eval 'get_'$mom'_offsets() {
+        local offsets="$1" o
+        shift || return 1
+        local {,_}{l,t,r,b}
+        IFS=" "  read l t r b <<< "$offsets"
+        for offsets in "$@"; do
+            IFS=" " read _{l,t,r,b} <<< "$offsets"
+            for o in l t r b; do
+                eval "(( (_$o '$cmp' $o) && ($o = _$o) )) || :"
+            done
+        done
+        printf "%d %d %d %d\n" $l $t $r $b
+    }'
+done
+unset -v mom cmp
+
 # $1: array variable of heads, e.g. =([0]=1440x900+0+124 [1]=1280x1024+1440+0)
 # $2: array variable of head IDs, e.g. =(0 1 2)
-# $3: array variable to assign corners list to, i.e. =([id]=corners ...)
+# $3: array variable to assign offsets list to, i.e. =([id]=offsets ...)
 # $4: array variable to assign bad head IDs to, e.g. =(2)
-heads_get_corners_list_by_ref() {
+get_offsets_list_by_heads_by_ref() {
     local -n ref_heads=$1
     local -n ref_head_ids=$2
     local -- i w h _x _y x_ y_
@@ -146,14 +163,14 @@ heads_get_corners_list_by_ref() {
             IFS='x+' read w h _x _y <<< "${ref_heads[i]}"
             (( x_ = rootw - _x - w )) || :
             (( y_ = rooth - _y - h )) || :
-            printf -v "$3[$i]" "%d,%d %d,%d" $_x $_y $x_ $y_
+            printf -v "$3[$i]" "%d %d %d %d" $_x $_y $x_ $y_
         else
             printf -v "$4[$i]" %d $i
         fi
     done
 }
 
-parse_geospec_get_corners() {
+get_offsets_by_geospec() {
     local geospec=$1
     local _x _y x_ y_ w h
     local n='?([-+])+([0-9])'
@@ -175,59 +192,22 @@ parse_geospec_get_corners() {
             return 1
             ;;
     esac
-    printf '%d,%d %d,%d\n' $_x $_y $x_ $y_
+    printf '%d %d %d %d\n' $_x $_y $x_ $y_
 }
 
-# Note: without knowlege of the size of the root window, it's not possible to
-# determine whether the resulting corner offsets define a valid region.
-# The resulting geometry must be checked in the context of the root window.
-region_intersect_corners() {
-    local corners
-    local _x _y x_ y_
-    local _X _Y X_ Y_
-    # Initialize variable- otherwise bash will fallback to 0
-    IFS=' ,' read _X _Y X_ Y_ <<< "$1"
-    shift || return 1
-    for corners in "$@"; do
-        IFS=' ,' read _x _y x_ y_ <<< "$corners"
-        (( _X = _x > _X ? _x : _X )) || :
-        (( _Y = _y > _Y ? _y : _Y )) || :
-        (( X_ = x_ > X_ ? x_ : X_ )) || :
-        (( Y_ = y_ > Y_ ? y_ : Y_ )) || :
-    done
-    printf '%d,%d %d,%d\n' $_X $_Y $X_ $Y_
-}
-
-region_union_corners() {
-    local corners
-    local _x _y x_ y_
-    local _X _Y X_ Y_
-    # Initialize variable- otherwise bash will fallback to 0
-    IFS=' ,' read _X _Y X_ Y_ <<< "$1"
-    shift || return 1
-    for corners in "$@"; do
-        IFS=' ,' read _x _y x_ y_ <<< "$corners"
-        (( _X = _x < _X ? _x : _X )) || :
-        (( _Y = _y < _Y ? _y : _Y )) || :
-        (( X_ = x_ < X_ ? x_ : X_ )) || :
-        (( Y_ = y_ < Y_ ? y_ : Y_ )) || :
-    done
-    printf '%d,%d %d,%d\n' $_X $_Y $X_ $Y_
-}
-
-select_region_get_corners() {
+select_region_get_offsets() {
     msg "%s" "please select a region using mouse"
-    xrectsel_get_corners
+    xrectsel_get_offsets
 }
 
-select_window_get_corners() {
+select_window_get_offsets() {
     msg "%s" "please click once in target window"
-    LC_ALL=C xwininfo | xwininfo_get_corners
+    LC_ALL=C xwininfo | xwininfo_get_offsets
 }
 
-window_id_get_corners() {
-    msg "get corners by window ID %x" "$1"
-    LC_ALL=C xwininfo -id "$1" | xwininfo_get_corners
+window_id_get_offsets() {
+    msg "selecting window by window ID 0x%x" "$1"
+    LC_ALL=C xwininfo -id "$1" | xwininfo_get_offsets
 }
 
 # stdin: xdpyinfo -ext XINERAMA (preferably sanitized)
@@ -258,10 +238,10 @@ xprop_get_frame_extents() {
     grep '^_NET_FRAME_EXTENTS = ' | sed 's/.*= //'
 }
 
-# stdout: x1,y1 x2,y2
-xrectsel_get_corners() {
+# stdout: x1 y1 x2 y2
+xrectsel_get_offsets() {
     # Note: requires xrectsel 0.3
-    xrectsel "%x,%y %X,%Y"$'\n'
+    xrectsel "%x %y %X %Y"$'\n'
 }
 
 # stdin: xwininfo output (locale: C)
@@ -286,8 +266,8 @@ xwininfo_get_size() {
 }
 
 # stdin: xwininfo output (locale: C)
-# stdout: x1,y1 x2,y2
-xwininfo_get_corners() {
+# stdout: x1 y1 x2 y2
+xwininfo_get_offsets() {
     local line
     local _x _y x_ y_ b
     local fl fr ft fb id
@@ -323,7 +303,7 @@ xwininfo_get_corners() {
             (( x_ += b )) || :
             (( y_ += b )) || :
     fi
-    printf '%d,%d %d,%d\n' $_x $_y $x_ $y_
+    printf '%d %d %d %d\n' $_x $_y $x_ $y_
 }
 
 run_default_command() {
@@ -364,10 +344,9 @@ run_subcmd_or_command() {
 }
 
 set_region_vars_by_offsets() {
-    (( _x = _x < 0 ? 0 : _x )) || :
-    (( _y = _y < 0 ? 0 : _y )) || :
-    (( x_ = x_ < 0 ? 0 : x_ )) || :
-    (( y_ = y_ < 0 ? 0 : y_ )) || :
+    offsets=$(get_max_offsets "$offsets" '0 0 0 0')
+    debug "get_max_offsets offsets '0 0 0 0' -> offsets='%s'" "$offsets"
+    IFS=' ' read _x _y x_ y_ <<< "$offsets"
     (( w = rootw - _x - x_ )) || :
     (( h = rooth - _y - y_ )) || :
     local var
@@ -464,8 +443,8 @@ if ! (( rootw && rooth )); then
     exit 1
 fi
 
-declare -- i=0 wid=0 corners geospec
-declare -a corners_list=() heads=() head_ids_bad=()
+declare -- offsets i=0 wid=0 geospec
+declare -a offsets_list=() heads=() head_ids_bad=()
 
 if (( ${#head_ids[@]} )); then
     if ! xdpyinfo_list_heads | xdpyinfo_get_heads_by_ref heads; then
@@ -473,25 +452,25 @@ if (( ${#head_ids[@]} )); then
         exit 1
     fi
     debug '%s' "$(declare -p heads)"
-    heads_get_corners_list_by_ref heads head_ids corners_list head_ids_bad
-    debug '%s' "$(declare -p corners_list)"
-    if (( ! ${#corners_list[@]} )); then
+    get_offsets_list_by_heads_by_ref heads head_ids offsets_list head_ids_bad
+    debug '%s' "$(declare -p offsets_list)"
+    if (( ! ${#offsets_list[@]} )); then
         error 'none of the specified head IDs exists'
         exit 1
     fi
     if (( ${#head_ids_bad[@]} )); then
         warn "ignored non-existent head IDs: %s" "${head_ids_bad[*]}"
     fi
-    corners_list=("${corners_list[@]}")  # indexing
-    i=${#corners_list[@]}
+    offsets_list=("${offsets_list[@]}")  # indexing
+    i=${#offsets_list[@]}
 fi
 
 for geospec in "${geospecs[@]}"; do
-    if ! corners=$(parse_geospec_get_corners "$geospec"); then
+    if ! offsets=$(get_offsets_by_geospec "$geospec"); then
         warn "ignored invalid geometry specification: \`%s'" "$geospec"
     else
-        corners_list[i++]=$corners
-        debug_array_by_key corners_list $(( i - 1 ))
+        offsets_list[i++]=$offsets
+        debug_array_by_key offsets_list $(( i - 1 ))
     fi
 done
 
@@ -499,17 +478,17 @@ printf %s "$region_select_action" |
 while read -n 1; do
     case $REPLY in
         's')
-            corners_list[i++]=$(select_region_get_corners)
-            debug_array_by_key corners_list $(( i - 1 ))
+            offsets_list[i++]=$(select_region_get_offsets)
+            debug_array_by_key offsets_list $(( i - 1 ))
             ;;
         'w')
-            corners_list[i++]=$(select_window_get_corners)
-            debug_array_by_key corners_list $(( i - 1 ))
+            offsets_list[i++]=$(select_window_get_offsets)
+            debug_array_by_key offsets_list $(( i - 1 ))
             ;;
         '#')
-            corners_list[i++]=$(window_id_get_corners "${window_ids[wid]}")
+            offsets_list[i++]=$(window_id_get_offsets "${window_ids[wid]}")
             (( ++wid ))
-            debug_array_by_key corners_list $(( i - 1 ))
+            debug_array_by_key offsets_list $(( i - 1 ))
             ;;
         'b')
             borders=1
@@ -524,20 +503,19 @@ done
 
 if (( i )); then
     if (( intersection )); then
-        corners=$(region_intersect_corners "${corners_list[@]}")
-        debug "intersection(corners_list[@]) -> corners=%q" "${corners}"
+        offsets=$(get_max_offsets "${offsets_list[@]}")
+        debug "get_max_offsets offsets_list[@] -> offsets='%s'" "$offsets"
     else
-        corners=$(region_union_corners "${corners_list[@]}")
-        debug "union(corners_list[@]) -> corners=%q" "${corners}"
+        offsets=$(get_min_offsets "${offsets_list[@]}")
+        debug "get_min_offsets offsets_list[@] -> offsets='%s'" "$offsets"
     fi
 else
-    corners='0,0 0,0'
     verbose 'no valid user selection, falling back to fullscreen'
-    corners_list=("$corners")
-    debug '%s' "$(declare -p corners_list)"
+    offsets='0 0 0 0'
+    offsets_list=("$offsets")
+    debug '%s' "$(declare -p offsets_list)"
 fi
 
-IFS=' ,' read _x _y x_ y_ <<< "$corners"
 set_region_vars_by_offsets || exit
 
 #---

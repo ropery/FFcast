@@ -54,16 +54,15 @@ sub_cmdfuncs['dump']=subcmd_dump
 subcmd_dump() {
     local i=0
     (( ! ${#head_ids[@]} )) || declare -p heads
-    declare -p intersection corners{_list,} _{x,y} {x,y}_ {,root}{w,h}
+    declare -p {root,}{w,h} _{x,y} {x,y}_ offsets_list
 }
 
 sub_commands['each']='run a sub-command on each selection consecutively'
 sub_cmdfuncs['each']=subcmd_each
 subcmd_each() {
     : 'usage: each [sub-command]'
-    local corners;
-    for corners in "${corners_list[@]}"; do
-        IFS=' ,' read _x _y x_ y_ <<< "$corners"
+    local offsets;
+    for offsets in "${offsets_list[@]}"; do
         set_region_vars_by_offsets 1 || continue
         run_subcmd_or_command "$@"
     done

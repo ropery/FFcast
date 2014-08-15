@@ -94,7 +94,7 @@ parameters.
 All I<E<lt>argsE<gt>> to an external I<E<lt>commandE<gt>> are always subject
 to format string substitution.
 
-All I<E<lt>argsE<gt>> to an internal I<E<lt>sub-commandE<gt>> are not
+Note I<E<lt>argsE<gt>> to an internal I<E<lt>sub-commandE<gt>> are not
 automatically subject to format string substitution, although sub-commands may
 choose to do format string substitution on their own.
 
