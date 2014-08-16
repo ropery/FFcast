@@ -108,7 +108,7 @@ subcmd_png() {
     fi
     msg 'saving to file: %s' "$outfile"
     verbose_run command \
-        ffmpeg -loglevel error -f x11grab -show_region 1 \
+        ffmpeg -loglevel error -f x11grab -draw_mouse 0 -show_region 1 \
         -video_size "${w}x$h" -i "$DISPLAY+$_x,$_y" \
         -f image2 -codec:v png -frames:v 1 "$outfile"
 }

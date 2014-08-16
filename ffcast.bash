@@ -101,7 +101,7 @@ for ((i=3; i<${#logl[@]}; ++i)) ; do
         _quote_cmd_line \"\${logp[${logl[i]}]-${logl[i]}}: cmdline: \" \"\$@\"
     } >&2
     ${logl[i]}_run() {
-        ${logl[i]}_dryrun \"\$@\" &&  \"\$@\"
+        ${logl[i]}_dryrun \"\$@\" && \"\$@\"
     }"
 done
 
@@ -138,7 +138,7 @@ printf '%s %s\n' max '>' min '<' | while IFS=' ' read -r mom cmp; do
         local offsets="$1" o
         shift || return 1
         local {,_}{l,t,r,b}
-        IFS=" "  read l t r b <<< "$offsets"
+        IFS=" " read l t r b <<< "$offsets"
         for offsets in "$@"; do
             IFS=" " read _{l,t,r,b} <<< "$offsets"
             for o in l t r b; do
@@ -354,7 +354,7 @@ set_region_vars_by_offsets() {
     for var in w h _{x,y} {x,y}_; do
         debug '\t%s' "$(declare -p "$var")"
     done
-    if ! ((  w > 0 && h > 0 )); then
+    if ! (( w > 0 && h > 0 )); then
         "${logl[${1:- 0}]}" 'invalid region size: %sx%s' "$w" "$h"
         return 1
     fi

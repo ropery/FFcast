@@ -1,6 +1,6 @@
 PACKAGE = FFcast
 PRGNAME = ffcast
-VERSION = 2.0.0-rc9
+VERSION = 2.0.0
 
 OUT = xrectsel
 SRC = $(wildcard *.c)
@@ -23,7 +23,7 @@ LDFLAGS += -lX11
 
 uppercase = $(shell echo $(1) | tr a-z A-Z)
 
-all: $(BINPROGS) $(LIBSTUFF) $(MANPAGES)
+all: $(BINPROGS) $(LIBSTUFF) $(MANPAGES) zsh_completion
 
 $(OUT): $(OBJ)
 	$(CC) -o $@ $(OBJ) $(LDFLAGS)
@@ -50,12 +50,16 @@ install: all
 	install -m755 $(BINPROGS) $(DESTDIR)$(BINDIR)
 	install -m644 $(LIBSTUFF) $(DESTDIR)$(LIBDIR)/$(PRGNAME)
 	install -m644 $(MANPAGES) $(DESTDIR)$(MAN1DIR)
+	install -Dm644 zsh_completion \
+		$(DESTDIR)$(DATAROOTDIR)/zsh/site-functions/_ffcast
 
 uninstall:
 	@echo removing executable files from $(DESTDIR)$(BINDIR)
 	$(RM) $(DESTDIR)$(BINDIR)/$(BINPROGS)
 	@echo removing man pages from $(DESTDIR)$(MAN1DIR)
 	$(RM) $(DESTDIR)$(MAN1DIR)/$(MANPAGES)
+	@echo removing zsh files from $(DESTDIR)$(DATAROOTDIR)/zsh/site-functions
+	$(RM) $(DESTDIR)$(DATAROOTDIR)/zsh/site-functions/_ffcast
 
 dist:
 	install -dm755 release

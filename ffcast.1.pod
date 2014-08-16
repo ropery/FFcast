@@ -197,7 +197,7 @@ explicitly pad the region with the size of the frame:
 
 Use the sub-command B<rec> to record a fullscreen screencast on display C<:1>.
 The B<rec> sub-command accepts the B<-m> option, which crops the video so
-both its width and height are divisible by the given number, i.e. C<4> here:
+both its width and height are divisible by the given number:
 
     DISPLAY=:1 ffcast -vv rec -m 4 screencast.mkv
 
@@ -218,8 +218,7 @@ head 0, using either of:
     ffcast -ww ffcast -i -x 0 -g %g png
 
 Take three individual screenshots of heads 0, 1, 2, one by one. The B<each>
-command runs a command, i.e. B<png> here, for each user selection,
-consecutively.
+command runs a command for each user selection consecutively:
 
     ffcast -x 0,1,2 each png head_%g.png
 
