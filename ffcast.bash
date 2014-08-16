@@ -113,7 +113,7 @@ format_to_string() {
             IFS= read -r -n 1 -d '' c || :
             case $c in
                 '%') str+=%;;
-                'd') str+=$DISPLAY;;
+                'D') str+=$DISPLAY;;
                 'h') str+=$h;;
                 'w') str+=$w;;
                 'x') str+=$_x;;

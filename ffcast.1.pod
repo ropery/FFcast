@@ -102,7 +102,7 @@ The following format strings are supported:
 
 =over 4
 
-=item B<%d>
+=item B<%D>
 
 B<DISPLAY>
 
@@ -205,7 +205,7 @@ Record a screencast of all three windows of B<GIMP>. This works because all
 selections are by default combined by union. Note format strings are always
 substituted for external commands:
 
-    ffcast -www ffmpeg -f x11grab -show_region 1 -s %s -i %d+%c gimp.mp4
+    ffcast -www ffmpeg -f x11grab -show_region 1 -s %s -i %D+%c gimp.mp4
 
 Resize a window to the same size as another, by two mouse clicks:
 
