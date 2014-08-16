@@ -135,8 +135,7 @@ subcmd_rec() {
     verbose_run command \
         ffmpeg -loglevel "${v[verbosity]}" -f x11grab -show_region 1 \
         -framerate 25 -video_size "${w}x$h" -i "$DISPLAY+$_x,$_y" \
-        -codec:v libx264 -filter:v crop="iw-mod(iw\\,$m):ih-mod(ih\\,$m)" \
-        "$outfile"
+        -filter:v crop="iw-mod(iw\\,$m):ih-mod(ih\\,$m)" "$outfile"
 }
 
 # vim:ts=4:sw=4:et:cc=80:
