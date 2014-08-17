@@ -1,20 +1,24 @@
 #compdef ffcast
 
+if ! zstyle -t ":completion:${curcontext}options:" sort; then
+  zstyle ":completion:${curcontext}options:" sort false
+fi
+
 _ffcast() {
   _arguments -S \
     '(-h)*-g+[specify a region in numeric geometry]:geospec:' \
+    '(-h)*-x+[select the Xinerama head of ID n]:head id:_ffcast_heads' \
     '(-h)*-s[select a rectangular region by mouse]' \
     '(-h)*-w[select a window by mouse click]' \
     '(-h)*-#+[select a window by window ID]:window id:' \
-    '(-h)*-x+[select the Xinerama head of ID n]:head id:_ffcast_heads' \
     '(-h)-b[include window borders hereafter]' \
     '(-h)-f[include window frame hereafter]' \
     '(-h)-i[combine regions by intersection]' \
+    '(-h)*-q[be less verbose]' \
+    '(-h)*-v[be more verbose]' \
     '(- :)-h[print this help and exit]' \
     '(-):command: _command_names -e' \
     '*::arguments: _normal'
-#   '(-h)*-q[be less verbose]' \
-#   '(-h)*-v[be more verbose]' \
 }
 
 #(( $+functions[_ffcast_commands] )) ||

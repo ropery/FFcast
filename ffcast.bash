@@ -381,10 +381,10 @@ Usage:
 
   Options:
     -g <geospec> specify a region in numeric geometry
+    -x <n|list>  select the Xinerama head of ID n
     -s           select a rectangular region by mouse
     -w           select a window by mouse click
     -# <n>       select a window by window ID
-    -x <n|list>  select the Xinerama head of ID n
     -b           include window borders hereafter
     -f           include window frame hereafter
     -i           combine regions by intersection
@@ -404,9 +404,6 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
     case $opt in
         h) usage 0;;
         g) geospecs+=("$OPTARG");;
-        s) region_select_action+='s';;
-        w) region_select_action+='w';;
-       \#) region_select_action+='#'; window_ids+=("$OPTARG");;
         x)
             if [[ $OPTARG == l?(ist) ]]; then
                 xdpyinfo_list_heads
@@ -423,6 +420,9 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
                 head_ids[i]=$i
             done
             ;;
+        s) region_select_action+='s';;
+        w) region_select_action+='w';;
+       \#) region_select_action+='#'; window_ids+=("$OPTARG");;
         b) region_select_action+='b';;
         f) region_select_action+='f';;
         i) intersection=1;;
