@@ -327,7 +327,7 @@ run_external_command() {
         args+=("$(format_to_string "$1")")
         shift
     done
-    verbose_run command "$cmd" "${args[@]}"
+    verbose_run command -- "$cmd" "${args[@]}"
 }
 
 run_subcmd_or_command() {
