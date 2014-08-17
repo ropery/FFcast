@@ -34,7 +34,7 @@ declare -- verbosity=2
 declare -A sub_commands=() sub_cmdfuncs=()
 declare -a head_ids=() geospecs=() window_ids=()
 declare -- region_select_action=
-declare -- borders=0 frame=0 intersection=0
+declare -- borders=0 frame=0 frame_extents_support=1 intersection=0
 
 #---
 # Functions
@@ -202,7 +202,15 @@ select_region_get_offsets() {
 
 select_window_get_offsets() {
     msg "%s" "please click once in target window"
-    LC_ALL=C xwininfo | xwininfo_get_offsets
+    if (( frame )); then
+        if (( frame_extents_support )); then
+            LC_ALL=C xwininfo | xwininfo_get_offsets 1
+        else
+            LC_ALL=C xwininfo -frame | xwininfo_get_offsets
+        fi
+    else
+        LC_ALL=C xwininfo | xwininfo_get_offsets
+    fi
 }
 
 window_id_get_offsets() {
@@ -288,7 +296,7 @@ xwininfo_get_offsets() {
         fi
     done
     [[ -n $id && -n $_x && -n $b ]] || return 1
-    if (( frame )); then
+    if (( $# )); then
         if ! xprop_get_frame_extents "$id" | IFS=' ,' read fl fr ft fb; then
             warn "unable to determine frame extents for window %s" "$id"
         else
@@ -473,6 +481,14 @@ for geospec in "${geospecs[@]}"; do
         debug_array_by_key offsets_list $(( i - 1 ))
     fi
 done
+
+if [[ $region_select_action == *f* ]]; then
+    if ! LC_ALL=C xprop -root -notype _NET_SUPPORTED |
+        grep -qw _NET_FRAME_EXTENTS; then
+        frame_extents_support=0
+        warn 'no _NET_FRAME_EXTENTS support, falling back to xwininfo -frame'
+    fi
+fi
 
 printf %s "$region_select_action" |
 while read -n 1; do
