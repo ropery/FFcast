@@ -475,7 +475,7 @@ fi
 
 for geospec in "${geospecs[@]}"; do
     if ! offsets=$(get_offsets_by_geospec "$geospec"); then
-        warn "ignored invalid geometry specification: \`%s'" "$geospec"
+        warn "ignored invalid geospec: \`%s'" "$geospec"
     else
         offsets_list[i++]=$offsets
         debug_array_by_key offsets_list $(( i - 1 ))

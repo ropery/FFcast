@@ -165,7 +165,7 @@ respectively.
 
 =item I<w>B<x>I<h>B<+>I<x>B<+>I<y>
 
-I<w>, I<h>, I<x> and I<y> are the width, height and left and right offsets,
+I<w>, I<h>, I<x> and I<y> are the width, height, left offset and top offset,
 respectively.
 
 =back
