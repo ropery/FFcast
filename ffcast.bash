@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-if (( ${BASH_VERSINFO[0]} == 4 && ${BASH_VERSINFO[1]} < 3 )) ||
-   (( ${BASH_VERSINFO[0]} < 4 )); then
+if (( BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] < 3 )) ||
+   (( BASH_VERSINFO[0] < 4 )); then
     printf 'fatal: requires bash 4.3+ but this is bash %s\n' "$BASH_VERSION"
     exit 43
 fi >&2
@@ -84,7 +84,7 @@ _report_array_by_key() {
 
 debug_array_by_key() {
     (( verbosity >= 4 )) || return 0
-    printf "${logp[debug]}: "
+    printf '%s: ' "${logp[debug]}"
     _report_array_by_key "$@"
 } >&2
 
@@ -145,7 +145,7 @@ printf '%s %s\n' max '>' min '<' | while IFS=' ' read -r mom cmp; do
                 eval "(( (_$o '$cmp' $o) && ($o = _$o) )) || :"
             done
         done
-        printf "%d %d %d %d\n" $l $t $r $b
+        printf "%d %d %d %d\n" "$l" "$t" "$r" "$b"
     }'
 done
 unset -v mom cmp
@@ -163,9 +163,9 @@ get_offsets_list_by_heads_by_ref() {
             IFS='x+' read w h _x _y <<< "${ref_heads[i]}"
             (( x_ = rootw - _x - w )) || :
             (( y_ = rooth - _y - h )) || :
-            printf -v "$3[$i]" "%d %d %d %d" $_x $_y $x_ $y_
+            printf -v "$3[$i]" "%d %d %d %d" "$_x" "$_y" "$x_" "$y_"
         else
-            printf -v "$4[$i]" %d $i
+            printf -v "$4[$i]" "%d" "$i"
         fi
     done
 }
@@ -192,7 +192,7 @@ get_offsets_by_geospec() {
             return 1
             ;;
     esac
-    printf '%d %d %d %d\n' $_x $_y $x_ $y_
+    printf '%d %d %d %d\n' "$_x" "$_y" "$x_" "$y_"
 }
 
 select_region_get_offsets() {
@@ -221,7 +221,7 @@ xdpyinfo_get_heads_by_ref() {
     while IFS=' ' read -r line; do
         if [[ $line == $head ]]; then
             IFS=' :x@,' read i w h x y <<< "${line#head #}"
-            printf -v "$1[$i]" "%dx%d+%d+%d" $w $h $x $y
+            printf -v "$1[$i]" "%dx%d+%d+%d" "$w" "$h" "$x" "$y"
         fi
     done
     [[ -n $i ]]
@@ -258,7 +258,7 @@ xwininfo_get_size() {
             continue
         fi
         if (( w && h )); then
-            printf '%dx%d\n' $w $h
+            printf '%dx%d\n' "$w" "$h"
             return
         fi
     done
@@ -303,11 +303,11 @@ xwininfo_get_offsets() {
             (( x_ += b )) || :
             (( y_ += b )) || :
     fi
-    printf '%d %d %d %d\n' $_x $_y $x_ $y_
+    printf '%d %d %d %d\n' "$_x" "$_y" "$x_" "$y_"
 }
 
 run_default_command() {
-    printf "%dx%d+%d+%d\n" $w $h $_x $_y
+    printf "%dx%d+%d+%d\n" "$w" "$h" "$_x" "$_y"
 }
 
 run_external_command() {

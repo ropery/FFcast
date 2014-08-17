@@ -52,7 +52,6 @@ sub_cmdfuncs['%']=run_external_command
 sub_commands['dump']='dump region-related variables in bash code'
 sub_cmdfuncs['dump']=subcmd_dump
 subcmd_dump() {
-    local i=0
     (( ! ${#head_ids[@]} )) || declare -p heads
     declare -p {root,}{w,h} _{x,y} {x,y}_ offsets_list
 }
@@ -73,7 +72,7 @@ sub_cmdfuncs['pad']=subcmd_pad
 subcmd_pad() {
     : 'usage: pad <padding> [sub-command]'
     local -- t r b l
-    IFS=' \t,' read -r t r b l <<< $1
+    IFS=' \t,' read -r t r b l <<< "$1"
     shift || return 0
     if [[ -z $t ]]; then
         return
@@ -90,7 +89,7 @@ subcmd_pad() {
     (( _y -= t )) || :
     (( x_ -= r )) || :
     (( y_ -= b )) || :
-    verbose 'padding: top=%d right=%d bottom=%d left=%d' $t $r $b $l
+    verbose 'padding: top=%d right=%d bottom=%d left=%d' "$t" "$r" "$b" "$l"
     offsets="$_x $_y $x_ $y_"
     set_region_vars_by_offsets || exit
     run_subcmd_or_command "$@"
