@@ -98,27 +98,27 @@ subcmd_pad() {
 sub_commands['png']='take a screenshot and save it as a PNG image'
 sub_cmdfuncs['png']=subcmd_png
 subcmd_png() {
-    : 'usage: png [filename] [output_options]'
-    local outfile
-    if [[ -n $1 && $1 != -* ]]; then
-        outfile=$(format_to_string "$1")
+    : 'usage: png [filename]'
+    local -a args=()
+    while (( $# )); do
+        args+=("$(format_to_string "$1")")
         shift
-    else
-        outfile=$(printf '%s-%(%s)T_%dx%d.png' screenshot -1 "$w" "$h")
-    fi
-    msg 'saving to file: %s' "$outfile"
+    done
+    : ${args[0]="$(printf '%s-%(%s)T_%dx%d.png' screenshot -1 "$w" "$h")"}
+    msg 'saving to file: %s' "${args[-1]}"  # unreliable
     verbose_run command -- \
         ffmpeg -loglevel error -f x11grab -draw_mouse 0 -show_region 1 \
         -video_size "${w}x$h" -i "$DISPLAY+$_x,$_y" \
-        -f image2 -codec:v png -frames:v 1 "$@" "$outfile"
+        -f image2 -codec:v png -frames:v 1 "${args[@]}"
 }
 
 sub_commands['rec']='record a screencast'
 sub_cmdfuncs['rec']=subcmd_rec
 subcmd_rec() {
-    : 'usage: rec [-m <n>] [filename.ext] [output_options]'
+    : 'usage: rec [-m <n>] [filename.ext]'
+    local -a args=()
     local -a v=(fatal error info verbose debug)  # ffmpeg loglevels
-    local m=1 opt outfile
+    local m=1 opt
     OPTIND=1
     while getopts ':m:' opt; do
         case $opt in
@@ -126,17 +126,16 @@ subcmd_rec() {
         esac
     done
     shift $(( OPTIND -1 ))
-    if [[ -n $1 && $1 != -* ]]; then
-        outfile=$(format_to_string "$1")
+    while (( $# )); do
+        args+=("$(format_to_string "$1")")
         shift
-    else
-        outfile=$(printf '%s-%(%s)T.mkv' screencast -1)
-    fi
-    msg 'saving to file: %s' "$outfile"
+    done
+    : ${args[0]="$(printf '%s-%(%s)T.mkv' screencast -1)"}
+    msg 'saving to file: %s' "${args[-1]}"  # unreliable
     verbose_run command -- \
         ffmpeg -loglevel "${v[verbosity]}" -f x11grab -show_region 1 \
         -framerate 25 -video_size "${w}x$h" -i "$DISPLAY+$_x,$_y" \
-        -filter:v crop="iw-mod(iw\\,$m):ih-mod(ih\\,$m)" "$@" "$outfile"
+        -filter:v crop="iw-mod(iw\\,$m):ih-mod(ih\\,$m)" "${args[@]}"
 }
 
 # vim:ts=4:sw=4:et:cc=80:
