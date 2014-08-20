@@ -1,6 +1,6 @@
 =head1 NAME
 
-ffcast - screencast an interactively selected region
+ffcast - run command on rectangular screen regions
 
 =head1 SYNOPSIS
 
