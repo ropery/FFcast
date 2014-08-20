@@ -16,9 +16,9 @@ _ffcast() {
     '(-h)-i[combine regions by intersection]' \
     '(-h)*-q[be less verbose]' \
     '(-h)*-v[be more verbose]' \
-    '(- :)-h[print this help and exit]' \
     '(-):command: _command_names -e' \
     '*::arguments: _normal'
+#   '(- :)-h[print this help and exit]' \
 }
 
 #(( $+functions[_ffcast_commands] )) ||

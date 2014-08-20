@@ -125,7 +125,7 @@ subcmd_rec() {
             m) m=$OPTARG;;
         esac
     done
-    shift $(( OPTIND -1 ))
+    shift $(( OPTIND - 1 ))
     while (( $# )); do
         args+=("$(format_to_string "$1")")
         shift

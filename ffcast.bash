@@ -363,7 +363,7 @@ set_region_vars_by_offsets() {
         debug '\t%s' "$(declare -p "$var")"
     done
     if ! (( w > 0 && h > 0 )); then
-        "${logl[${1:- 0}]}" 'invalid region size: %sx%s' "$w" "$h"
+        "${logl[${1:-0}]}" 'invalid region size: %sx%s' "$w" "$h"
         return 1
     fi
 }
@@ -396,13 +396,13 @@ Usage:
   Selections are combined by union, unless -i is specified.
   If no region-selecting options are given, select fullscreen.
 EOF
-  exit $1
+  exit "${1:-0}"
 }
 
 OPTIND=1
 while getopts ':#:bfg:hiqsvwx:' opt; do
     case $opt in
-        h) usage 0;;
+        h) usage;;
         g) geospecs+=("$OPTARG");;
         x)
             if [[ $OPTARG == l?(ist) ]]; then
@@ -427,12 +427,12 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
         f) region_select_action+='f';;
         i) intersection=1;;
         q) (( (verbosity > 0) && verbosity-- )) || :;;
-        v) (( (verbosity < ${#logl[@]}-1) && verbosity++ )) || :;;
+        v) (( (verbosity < ${#logl[@]} - 1) && verbosity++ )) || :;;
         '?') error "invalid option: \`%s'" "$OPTARG"; exit 1;;
         ':') error "option requires an argument: \`%s'" "$OPTARG"; exit 1;;
     esac
 done
-shift $(( OPTIND -1 ))
+shift $(( OPTIND - 1 ))
 
 #---
 # Process region geometry
