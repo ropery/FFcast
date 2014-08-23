@@ -172,10 +172,10 @@ respectively.
 
 =head1 SUB-COMMANDS
 
-To import sub-commands, ffcast B<source>s the files I</usr/lib/ffcast/subcmd>,
+To import sub-commands, ffcast B<source>s the files I<@LIBDIR@/ffcast/subcmd>,
 I</etc/ffcast/subcmd> and I<$XDG_CONFIG_HOME/ffcast/subcmd>, in that order.
 
-To learn how to register a sub-command, refer to I</usr/lib/ffcast/subcmd>.
+To learn how to register a sub-command, refer to I<@LIBDIR@/ffcast/subcmd>.
 
 =head1 EXAMPLES
 

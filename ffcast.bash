@@ -27,7 +27,7 @@ shopt -s extglob lastpipe
 trap -- 'trap_err $LINENO' ERR
 
 readonly -a \
-    srcdirs=({/usr/lib,/etc,"${XDG_CONFIG_HOME:-$HOME/.config}"}/'@PRGNAME@')
+    srcdirs=({'@LIBDIR@',/etc,"${XDG_CONFIG_HOME:-$HOME/.config}"}/'@PRGNAME@')
 readonly -a logl=(error warn msg verbose debug)
 declare -A 'logp=([warn]="warning" [msg]=":")'
 declare -- verbosity=2

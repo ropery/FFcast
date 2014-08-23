@@ -30,36 +30,37 @@ $(OUT): $(OBJ)
 
 %: %.bash
 	sed -e 's/@VERSION@/$(VERSION)/g' \
-		-e 's/@PRGNAME@/$(PRGNAME)/g' $< > $@ && chmod go-w,+x $@
+		-e 's/@PRGNAME@/$(PRGNAME)/g' \
+		-e 's|@LIBDIR@|$(LIBDIR)|g' $< > $@ && chmod go-w,+x $@
 
 %.1: %.1.pod
-	pod2man \
-		--center="$(PACKAGE) Manual" \
-		--name="$(call uppercase,$*)" \
-		--release="$(PACKAGE) $(VERSION)" \
-		--section=1 $< > $@
+	sed -e 's|@LIBDIR@|$(LIBDIR)|g' $< | pod2man \
+		--center='$(PACKAGE) Manual' \
+		--name='$(call uppercase,$*)' \
+		--release='$(PACKAGE) $(VERSION)' \
+		--section=1 > $@
 
 clean:
 	$(RM) $(OBJ) $(BINPROGS) $(LIBSTUFF) $(MANPAGES)
 
 install: all
 	install -dm755 \
-		$(DESTDIR)$(BINDIR) \
-		$(DESTDIR)$(LIBDIR)/$(PRGNAME) \
-		$(DESTDIR)$(MAN1DIR)
-	install -m755 $(BINPROGS) $(DESTDIR)$(BINDIR)
-	install -m644 $(LIBSTUFF) $(DESTDIR)$(LIBDIR)/$(PRGNAME)
-	install -m644 $(MANPAGES) $(DESTDIR)$(MAN1DIR)
+		'$(DESTDIR)$(BINDIR)' \
+		'$(DESTDIR)$(LIBDIR)/$(PRGNAME)' \
+		'$(DESTDIR)$(MAN1DIR)'
+	install -m755 $(BINPROGS) '$(DESTDIR)$(BINDIR)'
+	install -m644 $(LIBSTUFF) '$(DESTDIR)$(LIBDIR)/$(PRGNAME)'
+	install -m644 $(MANPAGES) '$(DESTDIR)$(MAN1DIR)'
 	install -Dm644 zsh_completion \
-		$(DESTDIR)$(DATAROOTDIR)/zsh/site-functions/_ffcast
+		'$(DESTDIR)$(DATAROOTDIR)/zsh/site-functions/_ffcast'
 
 uninstall:
 	@echo removing executable files from $(DESTDIR)$(BINDIR)
-	$(RM) $(DESTDIR)$(BINDIR)/$(BINPROGS)
+	$(RM) '$(DESTDIR)$(BINDIR)/$(BINPROGS)'
 	@echo removing man pages from $(DESTDIR)$(MAN1DIR)
-	$(RM) $(DESTDIR)$(MAN1DIR)/$(MANPAGES)
+	$(RM) '$(DESTDIR)$(MAN1DIR)/$(MANPAGES)'
 	@echo removing zsh files from $(DESTDIR)$(DATAROOTDIR)/zsh/site-functions
-	$(RM) $(DESTDIR)$(DATAROOTDIR)/zsh/site-functions/_ffcast
+	$(RM) '$(DESTDIR)$(DATAROOTDIR)/zsh/site-functions/_ffcast'
 
 dist:
 	install -dm755 release

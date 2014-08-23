@@ -42,10 +42,14 @@ https://github.com/lolilolicon/FFcast/releases[get releases].
 Installation
 ------------
 
-The usual `make && make install` works as expected.  Read +Makefile+ for
-details.
+The usual `make && make install` works as expected. For example,
 
-For Arch Linux users, https://aur.archlinux.org/packages/ffcast/[AUR/ffcast].
+  $ make PREFIX=/usr DESTDIR="$directory" install
+
+Read +Makefile+ for details.
+
+Arch Linux users can simply install
+https://aur.archlinux.org/packages/ffcast/[AUR/ffcast].
 
 Usage
 -----
