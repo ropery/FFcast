@@ -52,15 +52,17 @@ install: all
 	install -m644 $(LIBSTUFF) '$(DESTDIR)$(LIBDIR)/$(PRGNAME)'
 	install -m644 $(MANPAGES) '$(DESTDIR)$(MAN1DIR)'
 	install -Dm644 zsh_completion \
-		'$(DESTDIR)$(DATAROOTDIR)/zsh/site-functions/_ffcast'
+		'$(DESTDIR)$(DATAROOTDIR)'/zsh/site-functions/_ffcast
 
 uninstall:
 	@echo removing executable files from $(DESTDIR)$(BINDIR)
-	$(RM) '$(DESTDIR)$(BINDIR)/$(BINPROGS)'
+	$(foreach f,$(BINPROGS),$(RM) '$(DESTDIR)$(BINDIR)'/$(f))
+	@echo removing library files from $(DESTDIR)$(LIBDIR)/$(PRGNAME)
+	$(foreach f,$(LIBSTUFF),$(RM) '$(DESTDIR)$(LIBDIR)/$(PRGNAME)'/$(f))
 	@echo removing man pages from $(DESTDIR)$(MAN1DIR)
-	$(RM) '$(DESTDIR)$(MAN1DIR)/$(MANPAGES)'
+	$(foreach f,$(MANPAGES),$(RM) '$(DESTDIR)$(MAN1DIR)'/$(f))
 	@echo removing zsh files from $(DESTDIR)$(DATAROOTDIR)/zsh/site-functions
-	$(RM) '$(DESTDIR)$(DATAROOTDIR)/zsh/site-functions/_ffcast'
+	$(RM) '$(DESTDIR)$(DATAROOTDIR)'/zsh/site-functions/_ffcast
 
 dist:
 	install -dm755 release
