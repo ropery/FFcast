@@ -79,7 +79,7 @@ _report_array_by_key() {
     local varname=$1
     local -n ref_array=$1
     local key=$2
-    printf "%q[%q]=%q\n" "$varname" "$key" "${ref_array[$key]}"
+    printf '%q[%q]=%q\n' "$varname" "$key" "${ref_array[$key]}"
 }
 
 debug_array_by_key() {
@@ -107,7 +107,7 @@ done
 
 format_to_string() {
     local fmt=$1 str c
-    printf %s "$fmt" |
+    printf '%s' "$fmt" |
     while IFS= read -r -n 1 -d '' c; do
         if [[ $c == '%' ]]; then
             IFS= read -r -n 1 -d '' c || :
@@ -130,7 +130,7 @@ format_to_string() {
             str+=$c
         fi
     done
-    printf %s "$str";
+    printf '%s' "$str";
 }
 
 printf '%s %s\n' max '>' min '<' | while IFS=' ' read -r mom cmp; do
@@ -315,7 +315,7 @@ xwininfo_get_offsets() {
 }
 
 run_default_command() {
-    printf "%dx%d+%d+%d\n" "$w" "$h" "$_x" "$_y"
+    printf '%dx%d+%d+%d\n' "$w" "$h" "$_x" "$_y"
 }
 
 run_external_command() {
@@ -490,7 +490,7 @@ if [[ $region_select_action == *f* ]]; then
     fi
 fi
 
-printf %s "$region_select_action" |
+printf '%s' "$region_select_action" |
 while read -n 1; do
     case $REPLY in
         's')
