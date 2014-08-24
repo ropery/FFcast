@@ -12,21 +12,22 @@ ffcast - run command on rectangular screen regions
 
 =head1 DESCRIPTION
 
-ffcast is a thin glue between interactive region selection and command line
-tools that accept numerical geometry parameters. It makes passing geometry
-parameters to command line tools as easy as a mouse click. Screencasting
-tools are typical examples of such command line tools.
+ffcast is a thin glue between interactive screen region selection and command
+line tools that accept numerical geometry parameters. It makes passing
+geometry parameters to such tools as easy as a mouse click.
 
 Typically, ffcast prompts the user to select a screen region and injects the
 geometry parameters thereof into the arguments of I<E<lt>commandE<gt>>, and
 then executes the resultant command line. This injection is done via format
 string substitution. See B<L<FORMAT STRINGS|/FORMAT STRINGS>>.
 
+Multiple screen regions can be selected, and are by default combined by
+"union" into a single region. If no valid region is specified by the user,
+the root window is selected.
+
 ffcast maintains an internal list of predefined B<sub-commands>, which is
-looked up before all external commands. Use the B<help> sub-command to get a
-list of all sub-commands. To bypass sub-command lookup, use the B<%>
-sub-command. It's possible to add or override sub-commands via user
-configuration. See B<L<SUB-COMMANDS|/SUB-COMMANDS>>.
+looked up before all external commands. It's possible to add or override
+sub-commands via user configuration. See B<L<SUB-COMMANDS|/SUB-COMMANDS>>.
 
 If neither I<E<lt>sub-commandE<gt>> nor I<E<lt>commandE<gt>> is given, the
 geometry of the selection is printed.
@@ -70,15 +71,15 @@ Be less verbose.
 
 =item B<-s>
 
-Prompt to select a region.
+Select a rectangular region by dragging the mouse.
 
 =item B<-v>
 
-Be more verbose.
+Be more verbose. B<-v> turns on verbose messages. B<-vv> turns on debug.
 
 =item B<-w>
 
-Prompt to select a window.
+Select a window by clicking the mouse in that window.
 
 =item B<-x> I<E<lt>nE<gt>>
 
@@ -171,6 +172,14 @@ respectively.
 =back
 
 =head1 SUB-COMMANDS
+
+The first normal argument is looked up first in the list of sub-commands. If
+there is no match, it is executed as an external command.
+
+To bypass sub-command lookup entirely, use B<%> I<command>.
+
+To get a list of all sub-commands, use B<help> without an argument. B<help>
+I<sub-command> prints help for the specified sub-command.
 
 To import sub-commands, ffcast B<source>s the files I<@LIBDIR@/ffcast/subcmd>,
 I</etc/ffcast/subcmd> and I<$XDG_CONFIG_HOME/ffcast/subcmd>, in that order.

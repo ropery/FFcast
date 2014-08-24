@@ -379,22 +379,23 @@ usage() {
 Usage:
   ${0##*/} [options] [sub-command [args]] [command [args]]
 
-  Options:
-    -g <geospec> specify a region in numeric geometry
-    -x <n|list>  select the Xinerama head of ID n
-    -s           select a rectangular region by mouse
-    -w           select a window by mouse click
-    -# <n>       select a window by window ID
-    -b           include window borders hereafter
-    -f           include window frame hereafter
-    -i           combine regions by intersection
-    -q           be less verbose
-    -v           be more verbose
-    -h           print this help and exit
+Options:
+  -g <geospec>  specify a region in numeric geometry
+  -x <n|list>   select the Xinerama head of ID n
+  -s            select a rectangular region by mouse
+  -w            select a window by mouse click
+  -# <n>        select a window by window ID
+  -b            include window borders hereafter
+  -f            include window frame hereafter
+  -i            combine regions by intersection
+  -q            be less verbose
+  -v            be more verbose
+  -h            print this help and exit
 
-  All the options can be repeated, and are processed in order.
-  Selections are combined by union, unless -i is specified.
-  If no region-selecting options are given, select fullscreen.
+All options can be repeated, and are processed in order.
+If no region is selected by the user, select fullscreen.
+
+For more details see @PRGNAME@(1).
 EOF
   exit "${1:-0}"
 }
