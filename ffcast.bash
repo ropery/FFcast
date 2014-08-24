@@ -112,7 +112,7 @@ format_to_string() {
         if [[ $c == '%' ]]; then
             IFS= read -r -n 1 -d '' c || :
             case $c in
-                '%') str+=%;;
+                '%') str+='%';;
                 'D') str+=$DISPLAY;;
                 'h') str+=$h;;
                 'w') str+=$w;;
@@ -124,7 +124,7 @@ format_to_string() {
                 'C') str+=$x_,$y_;;
                 'g') str+=${w}x$h+$_x+$_y;;
                 's') str+=${w}x$h;;
-                *) str+=%$c;;
+                *) str+="%$c";;
             esac
         else
             str+=$c
