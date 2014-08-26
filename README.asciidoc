@@ -42,11 +42,12 @@ https://github.com/lolilolicon/FFcast/releases[get releases].
 Installation
 ------------
 
-The usual `make && make install` works as expected. For example,
+To build and install from source,
 
-  $ make PREFIX=/usr DESTDIR="$directory" install
-
-Read +Makefile+ for details.
+  ./bootstrap  # required if ./configure is not present
+  ./configure --prefix /usr --libexecdir /usr/lib --sysconfdir /etc
+  make
+  make DESTDIR="$directory" install
 
 Arch Linux users can simply install
 https://aur.archlinux.org/packages/ffcast/[AUR/ffcast].

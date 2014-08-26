@@ -181,10 +181,11 @@ To bypass sub-command lookup entirely, use B<%> I<command>.
 To get a list of all sub-commands, use B<help> without an argument. B<help>
 I<sub-command> prints help for the specified sub-command.
 
-To import sub-commands, ffcast B<source>s the files I<@LIBDIR@/ffcast/subcmd>,
-I</etc/ffcast/subcmd> and I<$XDG_CONFIG_HOME/ffcast/subcmd>, in that order.
+To import sub-commands, ffcast B<source>s the files I<@pkglibexecdir@/subcmd>,
+I<@sysconfdir@/@PACKAGE@/subcmd> and I<$XDG_CONFIG_HOME/@PACKAGE@/subcmd>,
+in that order.
 
-To learn how to register a sub-command, refer to I<@LIBDIR@/ffcast/subcmd>.
+To learn how to register a sub-command, refer to I<@pkglibexecdir@/subcmd>.
 
 =head1 EXAMPLES
 

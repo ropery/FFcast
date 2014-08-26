@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# FFcast @VERSION@
+# ffcast @VERSION@
 # Copyright (C) 2011-2014  lolilolicon <lolilolicon@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -26,8 +26,10 @@ set -e +m -o pipefail
 shopt -s extglob lastpipe
 trap -- 'trap_err $LINENO' ERR
 
-readonly -a \
-    srcdirs=({'@LIBDIR@',/etc,"${XDG_CONFIG_HOME:-$HOME/.config}"}/'@PRGNAME@')
+readonly -a srcdirs=(
+    '@pkglibexecdir@'
+    '@sysconfdir@/@PACKAGE@'
+    "${XDG_CONFIG_HOME:-$HOME/.config}"/'@PACKAGE@')
 readonly -a logl=(error warn msg verbose debug)
 declare -A 'logp=([warn]="warning" [msg]=":")'
 declare -- verbosity=2
@@ -135,7 +137,7 @@ format_to_string() {
 
 printf '%s %s\n' max '>' min '<' | while IFS=' ' read -r mom cmp; do
     eval 'get_'$mom'_offsets() {
-        local offsets="$1" o
+        local offsets=$1 o
         shift || return 1
         local {,_}{l,t,r,b}
         IFS=" " read l t r b <<< "$offsets"
@@ -375,7 +377,7 @@ set_region_vars_by_offsets() {
 
 usage() {
     cat <<EOF
-@PRGNAME@ @VERSION@
+ffcast @VERSION@
 Usage:
   ${0##*/} [options] [sub-command [args]] [command [args]]
 
@@ -395,7 +397,7 @@ Options:
 All options can be repeated, and are processed in order.
 If no region is selected by the user, select fullscreen.
 
-For more details see @PRGNAME@(1).
+For more details see ffcast(1).
 EOF
   exit "${1:-0}"
 }
