@@ -1,4 +1,4 @@
-SUBDIRS = doc src src/xrectsel
+SUBDIRS = doc src $(subdirs)
 
 EXTRA_DIST = \
 	zsh_completion \

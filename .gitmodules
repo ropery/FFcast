@@ -1,0 +1,3 @@
+[submodule "src/xrectsel"]
+	path = src/xrectsel
+	url = https://github.com/lolilolicon/xrectsel.git

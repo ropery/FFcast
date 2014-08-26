@@ -1,6 +1,10 @@
 FFcast
 ======
 
+NOTE: Since FFcast 2.2.0, https://github.com/lolilolicon/xrectsel.git[xrectsel]
+has become a separate project. Packagers should from now on package xrectsel
+separately, and make FFcast depend on it.
+
 NOTE: Users of FFcast 1.0 will have to update their command lines. See issue #8.
 
 FFcast helps the user interactively select a screen region and hands over the
@@ -25,12 +29,8 @@ Requirements
   * FFmpeg   - for some sub-commands (`png`, `rec`)
   * xdpyinfo - for the `-x` option
   * xprop    - for the `-f` option
-  * xrectsel - for the `-s` option (included)
+  * https://github.com/lolilolicon/xrectsel.git[xrectsel] - for the `-s` option
   * xwininfo - for the `-w` option
-
-.xrectsel
-
-  * libX11
 
 Get the Source
 --------------
@@ -48,6 +48,13 @@ To build and install from source,
   ./configure --prefix /usr --libexecdir /usr/lib --sysconfdir /etc
   make
   make DESTDIR="$directory" install
+
+Note if you build from Git source, you can pull in xrectsel as a submodule,
+
+  git clone --recursive https://github.com/lolilolicon/FFcast.git
+  cd FFcast && ./bootstrap && ./configure --enable-xrectsel ... && make ...
+
+This will allow you to build and install xrectsel along with FFcast.
 
 Arch Linux users can simply install
 https://aur.archlinux.org/packages/ffcast/[AUR/ffcast].

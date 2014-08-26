@@ -16,5 +16,18 @@ AC_CONFIG_FILES([
   doc/Makefile
   src/Makefile
 ])
-AC_CONFIG_SUBDIRS([src/xrectsel])
+
+AC_ARG_ENABLE(xrectsel,
+  [AS_HELP_STRING([--enable-xrectsel],
+    [make xrectsel @<:@default=check@:>@])],
+  [xrectsel=$enableval], [xrectsel=check])
+
+AS_IF([test "x$xrectsel" != xno],
+  [AC_CHECK_FILE([src/xrectsel/xrectsel.c],
+    [AC_CONFIG_SUBDIRS([src/xrectsel])],
+    [if test "x$xrectsel" != xcheck; then
+       AC_MSG_FAILURE(
+         [--enable-xrectsel was given, but xrectsel.c does not exist])
+     fi])])
+
 AC_OUTPUT
