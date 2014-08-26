@@ -1,3 +1,4 @@
+.deps/
 aclocal.m4
 autom4te.cache/
 build-aux/
@@ -8,6 +9,7 @@ configure
 configure.lineno
 Makefile
 Makefile.in
-ffcast-*.tar.gz
+xrectsel
+xrectsel-*.tar.gz
 *.o
 *~
