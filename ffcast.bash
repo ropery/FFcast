@@ -90,14 +90,14 @@ debug_array_by_key() {
     _report_array_by_key "$@"
 } >&2
 
-for ((i=0; i<${#logl[@]}; ++i)) ; do
+for ((i=0; i<${#logl[@]}; ++i)); do
     eval "${logl[i]}() {
         (( verbosity >= $i )) || return 0
         _msg \"\${logp[${logl[i]}]-${logl[i]}}: \" \"\$@\"
     } >&2"
 done
 
-for ((i=3; i<${#logl[@]}; ++i)) ; do
+for ((i=3; i<${#logl[@]}; ++i)); do
     eval "${logl[i]}_dryrun() {
         (( verbosity >= $i )) || return 0
         _quote_cmd_line \"\${logp[${logl[i]}]-${logl[i]}}: cmdline: \" \"\$@\"
