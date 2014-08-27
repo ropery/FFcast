@@ -47,7 +47,7 @@ To build and install from source,
   ./bootstrap  # required if ./configure is not present
   ./configure --prefix /usr --libexecdir /usr/lib --sysconfdir /etc
   make
-  make DESTDIR="$directory" install
+  make DESTDIR="$dir" install  # $dir must be an absolute path
 
 Note if you build from Git source, you can pull in xrectsel as a submodule,
 

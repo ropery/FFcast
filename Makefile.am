@@ -6,7 +6,7 @@ EXTRA_DIST = \
 
 install-data-local:
 	$(MKDIR_P) '$(DESTDIR)$(datarootdir)/zsh/site-functions/'
-	$(INSTALL_DATA) zsh_completion \
+	$(INSTALL_DATA) '$(srcdir)/zsh_completion' \
 		'$(DESTDIR)$(datarootdir)/zsh/site-functions/_ffcast'
 
 uninstall-local:

@@ -23,7 +23,7 @@ AC_ARG_ENABLE(xrectsel,
   [xrectsel=$enableval], [xrectsel=check])
 
 AS_IF([test "x$xrectsel" != xno],
-  [AC_CHECK_FILE([src/xrectsel/xrectsel.c],
+  [AC_CHECK_FILE([$srcdir/src/xrectsel/xrectsel.c],
     [AC_CONFIG_SUBDIRS([src/xrectsel])],
     [if test "x$xrectsel" != xcheck; then
        AC_MSG_FAILURE(
