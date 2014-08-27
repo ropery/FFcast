@@ -13,6 +13,7 @@ fi
 
 AC_CONFIG_FILES([
   Makefile
+  aux/zsh_completion/Makefile
   doc/Makefile
   src/Makefile
 ])
