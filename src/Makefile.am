@@ -1,3 +1,5 @@
+include $(top_srcdir)/local.mk
+
 bin_SCRIPTS = ffcast
 pkglibexec_SCRIPTS = subcmd
 
@@ -6,8 +8,6 @@ EXTRA_DIST = \
 	subcmd.bash
 
 MOSTLYCLEANFILES = $(bin_SCRIPTS) $(pkglibexec_SCRIPTS)
-
-include $(top_srcdir)/automake.d/common.am
 
 %: %.bash Makefile
 	$(do_sub) < $< > $@

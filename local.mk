@@ -9,5 +9,3 @@ do_sub = $(SED) \
 	-e 's|@PACKAGE_URL[@]|$(PACKAGE_URL)|g' \
 	-e 's|@pkglibexecdir[@]|$(pkglibexecdir)|g' \
 	-e 's|@sysconfdir[@]|$(sysconfdir)|g'
-
-# vim:ft=make:

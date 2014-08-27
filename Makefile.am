@@ -1,4 +1,8 @@
-SUBDIRS = aux/zsh_completion doc src $(subdirs)
+SUBDIRS = doc src $(subdirs)
+
+if WANT_ZSH_COMPLETION
+SUBDIRS += aux/zsh_completion
+endif
 
 EXTRA_DIST = \
 	README.asciidoc

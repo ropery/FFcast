@@ -1,11 +1,11 @@
+include $(top_srcdir)/local.mk
+
 man_MANS = ffcast.1
 
 EXTRA_DIST = \
 	ffcast.1.pod
 
 MOSTLYCLEANFILES = $(man_MANS) $(man_MANS:.1=.pod)
-
-include $(top_srcdir)/automake.d/common.am
 
 # purpose for saving as foo.pod: make pod2man auto-set --name=FOO
 %.1: %.1.pod Makefile
