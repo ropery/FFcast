@@ -232,13 +232,17 @@ command runs a command for each user selection consecutively:
 
     ffcast -x 0,1,2 each png head_%g.png
 
-=head1 AUTHOR
-
-lolilolicon E<lt>lolilolicon@gmail.comE<gt>
-
 =head1 SEE ALSO
 
 B<ffmpeg(1)>, B<X(7)>
+
+=head1 REPORTING BUGS
+
+Send bug reports and feature requests to E<lt>B<@PACKAGE_BUGREPORT@>E<gt>.
+
+=head1 AUTHOR
+
+lolilolicon E<lt>lolilolicon@gmail.comE<gt>
 
 =for comment
 vim:ft=pod:spell:spelllang=en_us:cc=78:
