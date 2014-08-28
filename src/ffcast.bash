@@ -321,7 +321,7 @@ run_default_command() {
 }
 
 run_external_command() {
-    local -- cmd=$1
+    local -- cmd=$1 extcmd
     shift || return 0
     local -a args=()
     # always substitute format strings for external commands
@@ -329,7 +329,12 @@ run_external_command() {
         args+=("$(format_to_string "$1")")
         shift
     done
-    verbose_run command -- "$cmd" "${args[@]}"
+    # make sure it's an external command -- a disk file
+    if ! extcmd=$(type -P "$cmd"); then
+        error "external command '%s' not found" "$cmd"
+        return 127
+    fi
+    verbose_run command -- "$extcmd" "${args[@]}"
 }
 
 run_subcmd_or_command() {
@@ -349,7 +354,7 @@ run_subcmd_or_command() {
             exit 1
         fi
     else
-        run_external_command "$@"
+        run_external_command "$@" || exit
     fi
 }
 
