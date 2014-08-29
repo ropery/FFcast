@@ -34,8 +34,9 @@ readonly -a logl=(error warn msg verbose debug)
 declare -A 'logp=([warn]="warning" [msg]=":")'
 declare -- verbosity=2
 declare -A sub_commands=() sub_cmdfuncs=()
-declare -a head_ids=() geospecs=() window_ids=()
-declare -- region_select_action=
+declare -a rects=() regions=()
+declare -A heads=() windows=() heads_all=()
+declare -- rootw=0 rooth=0 _x=0 _y=0 x_=0 y_=0 w=0 h=0
 declare -- borders=0 frame=0 frame_extents_support=1 intersection=0
 
 #---
@@ -152,27 +153,9 @@ printf '%s %s\n' max '>' min '<' | while IFS=' ' read -r mom cmp; do
 done
 unset -v mom cmp
 
-# $1: array variable of heads, e.g. =([0]=1440x900+0+124 [1]=1280x1024+1440+0)
-# $2: array variable of head IDs, e.g. =(0 1 2)
-# $3: array variable to assign offsets list to, i.e. =([id]=offsets ...)
-# $4: array variable to assign bad head IDs to, e.g. =(2)
-get_offsets_list_by_heads_by_ref() {
-    local -n ref_heads=$1
-    local -n ref_head_ids=$2
-    local -- i w h _x _y x_ y_
-    for i in "${ref_head_ids[@]}"; do
-        if [[ -n ${ref_heads[i]} ]]; then
-            IFS='x+' read w h _x _y <<< "${ref_heads[i]}"
-            (( x_ = rootw - _x - w )) || :
-            (( y_ = rooth - _y - h )) || :
-            printf -v "$3[$i]" "%d %d %d %d" "$_x" "$_y" "$x_" "$y_"
-        else
-            printf -v "$4[$i]" "%d" "$i"
-        fi
-    done
-}
-
-get_offsets_by_geospec() {
+# $1: a geospec
+# $2: variable to assign offsets to
+set_region_by_geospec() {
     local geospec=$1
     local _x _y x_ y_ w h
     local n='?([-+])+([0-9])'
@@ -194,44 +177,53 @@ get_offsets_by_geospec() {
             return 1
             ;;
     esac
-    printf '%d %d %d %d\n' "$_x" "$_y" "$x_" "$y_"
+    printf -v "$2" '%d %d %d %d' "$_x" "$_y" "$x_" "$y_"
 }
 
-select_region_get_offsets() {
+# $1: variable to assign offsets to
+set_region_interactively() {
     msg "%s" "please select a region using mouse"
-    xrectsel_get_offsets
+    printf -v "$1" '%d %d %d %d' $(xrectsel_get_offsets)
 }
 
-select_window_get_offsets() {
+# $1: array variable to modify
+# $2: variable to assign window ID to
+set_window_interactively() {
     msg "%s" "please click once in target window"
-    if (( frame )); then
-        if (( frame_extents_support )); then
-            LC_ALL=C xwininfo | xwininfo_get_offsets 1
-        else
-            LC_ALL=C xwininfo -frame | xwininfo_get_offsets
-        fi
-    else
-        LC_ALL=C xwininfo | xwininfo_get_offsets
+    local -a args
+    if (( frame && !frame_extents_support )); then
+        args=("-frame")
     fi
+    xwininfo_get_window_by_ref "$1" "$2" "${args[@]}"
 }
 
-window_id_get_offsets() {
-    msg "selecting window by window ID 0x%x" "$1"
-    LC_ALL=C xwininfo -id "$1" | xwininfo_get_offsets
+# $1: a window ID
+# $2: array variable to modify
+# $3: variable to assign window ID to
+set_window_by_id() {
+    # Unlike xprop, xwininfo simply ignores an invalid -id argument
+    if [[ $1 != @(+([0-9])|0x+([[:xdigit:]])) ]] ||
+        [[ $(printf '%d' "$1") == 0 ]]; then
+        error 'invalid window id: %s' "$1"
+        return 1
+    fi
+    xwininfo_get_window_by_ref "$2" "$3" -id "$1"
 }
 
 # stdin: xdpyinfo -ext XINERAMA (preferably sanitized)
-# $1: array variable to assign heads to, i.e. =([id]=geometry ...)
+# $1: array variable to assign heads to, i.e. =([id]=offsets ...)
 xdpyinfo_get_heads_by_ref() {
     local line
-    local i w h x y
+    local i w h _x _y x_ y_
     local n='+([0-9])'
     # See print_xinerama_info() in xdpyinfo.c
     local head="head #$n: ${n}x$n @ $n,$n"
     while IFS=' ' read -r line; do
         if [[ $line == $head ]]; then
-            IFS=' :x@,' read i w h x y <<< "${line#head #}"
-            printf -v "$1[$i]" "%dx%d+%d+%d" "$w" "$h" "$x" "$y"
+            IFS=' :x@,' read i w h _x _y <<< "${line#head #}"
+            (( x_ = rootw - _x - w )) || :
+            (( y_ = rooth - _y - h )) || :
+            printf -v "$1[$i]" '%d %d %d %d' "$_x" "$_y" "$x_" "$y_"
         fi
     done
     [[ -n $i ]]
@@ -275,15 +267,18 @@ xwininfo_get_size() {
     return 1
 }
 
-# stdin: xwininfo output (locale: C)
 # stdout: x1 y1 x2 y2
-xwininfo_get_offsets() {
+# $1: array variable to modify
+# $2: variable to assign window ID to
+# ${@:3} are passed to xwininfo
+xwininfo_get_window_by_ref() {
     local line
     local _x _y x_ y_ b
     local fl fr ft fb id
     local n='-?[0-9]+'
     local corners="^Corners: *\\+($n)\\+($n) *-$n\\+$n *-($n)-($n) *\\+$n-$n\$"
     local window_id="^xwininfo: Window id: (0x[[:xdigit:]]+)"
+    LC_ALL=C xwininfo "${@:3}" |
     # Note: explicitly set IFS to ensure stripping of whitespaces
     while IFS=$' \t' read -r line && [[ -z $id || -z $_x || -z $b ]]; do
         if [[ $line =~ $window_id ]]; then
@@ -298,7 +293,7 @@ xwininfo_get_offsets() {
         fi
     done
     [[ -n $id && -n $_x && -n $b ]] || return 1
-    if (( $# )); then
+    if (( frame && frame_extents_support )); then
         if ! xprop_get_frame_extents "$id" | IFS=' ,' read fl fr ft fb; then
             warn "unable to determine frame extents for window %s" "$id"
         else
@@ -313,7 +308,8 @@ xwininfo_get_offsets() {
             (( x_ += b )) || :
             (( y_ += b )) || :
     fi
-    printf '%d %d %d %d\n' "$_x" "$_y" "$x_" "$y_"
+    printf -v "$1[$id]" '%d %d %d %d' "$_x" "$_y" "$x_" "$y_"
+    printf -v "$2" '%s' "$id"
 }
 
 run_default_command() {
@@ -376,7 +372,7 @@ set_region_vars_by_offsets() {
 }
 
 #---
-# Process command line options
+# Process command line options and rectangles
 
 [[ ! -t 2 ]] || msg_colors_on
 
@@ -407,125 +403,94 @@ EOF
   exit "${1:-0}"
 }
 
+LC_ALL=C xwininfo -root | xwininfo_get_size | IFS=x read rootw rooth || usage 1
+
+declare i=0 var=
 OPTIND=1
 while getopts ':#:bfg:hiqsvwx:' opt; do
     case $opt in
-        h) usage;;
-        g) geospecs+=("$OPTARG");;
+        h)  usage;;
         x)
-            if [[ $OPTARG == l?(ist) ]]; then
-                xdpyinfo_list_heads
-                exit
-            fi
-            IFS=' ,' read -a ids <<< "$OPTARG"
-            for i in "${ids[@]}"; do
-                if [[ $i != +([0-9]) ]]; then
-                    error "invalid head IDs: \'%s'" "$OPTARG"
+            [[ $OPTARG != l?(ist) ]] || { xdpyinfo_list_heads; exit; }
+            # cache list of all heads once
+            if (( ! ${#heads_all[@]} )); then
+                if ! xdpyinfo_list_heads |
+                    xdpyinfo_get_heads_by_ref heads_all; then
+                    error 'failed to get all Xinerama heads'
                     exit 1
                 fi
-                (( i = 10#$i )) || :
-                # Note: use i as key to discard duplicates
-                head_ids[i]=$i
+                debug 'got all Xinerama heads'
+                debug '\t%s' "$(declare -p heads_all)"
+            fi
+            IFS=' ,' read -a ids <<< "$OPTARG"
+            for id in "${ids[@]}"; do
+                if [[ $id != +([0-9]) ]]; then
+                    warn "ignored invalid head ID: \'%s'" "$id"
+                elif [[ ! -v heads_all[$id] ]]; then
+                    warn "ignored non-existent head ID: \`%s'" "$id"
+                else
+                    heads[$id]=${heads_all[$id]}
+                    rects[i++]="heads[$id]"
+                fi
             done
             ;;
-        s) region_select_action+='s';;
-        w) region_select_action+='w';;
-       \#) region_select_action+='#'; window_ids+=("$OPTARG");;
-        b) region_select_action+='b';;
-        f) region_select_action+='f';;
-        i) intersection=1;;
-        q) (( (verbosity > 0) && verbosity-- )) || :;;
-        v) (( (verbosity < ${#logl[@]} - 1) && verbosity++ )) || :;;
-        '?') error "invalid option: \`%s'" "$OPTARG"; exit 1;;
-        ':') error "option requires an argument: \`%s'" "$OPTARG"; exit 1;;
+        g)
+            var="regions[${#regions[@]}]"
+            if ! set_region_by_geospec "$OPTARG" "$var"; then
+                warn "ignored invalid geospec: \`%s'" "$geospec"
+            else
+                rects[i++]=$var
+            fi
+            ;;
+        s)
+            var="regions[${#regions[@]}]"
+            set_region_interactively "$var"
+            rects[i++]=$var
+            ;;
+       \#)
+            set_window_by_id "$OPTARG" windows var || exit
+            var="windows[$var]"
+            rects[i++]=$var
+            ;;
+        w)
+            set_window_interactively windows var
+            var="windows[$var]"
+            rects[i++]=$var
+            ;;
+        b)
+            borders=1
+            verbose "windows: now including borders"
+            ;;
+        f)
+            frame=1
+            verbose "windows: now including window manager frame"
+            if ! LC_ALL=C xprop -root -notype _NET_SUPPORTED |
+                grep -qw _NET_FRAME_EXTENTS; then
+                frame_extents_support=0
+                warn 'no _NET_FRAME_EXTENTS support; using xwininfo -frame'
+            fi
+            ;;
+        i)  intersection=1;;
+        q)  (( (verbosity > 0) && verbosity-- )) || :;;
+        v)  (( (verbosity < ${#logl[@]} - 1) && verbosity++ )) || :;;
+      '?')  warn "invalid option: \`%s'" "$OPTARG";;
+      ':')  error "option requires an argument: \`%s'" "$OPTARG"; exit 1;;
     esac
 done
 shift $(( OPTIND - 1 ))
 
 #---
-# Process region geometry
+# Combine all rectangles
 
-declare rootw=0 rooth=0 _x=0 _y=0 x_=0 y_=0 w=0 h=0
-LC_ALL=C xwininfo -root | xwininfo_get_size | IFS=x read rootw rooth
+declare -- offsets
+declare -a offsets_list=()
+declare -n ref_rect
 
-debug 'got root window size'
-debug '\t%s' "$(declare -p rootw)"
-debug '\t%s' "$(declare -p rooth)"
-
-# Note: this is safe because xwininfo_get_size ensures that its output is
-# either {int}x{int} or null, a random string like "rootw" is impossible.
-if ! (( rootw && rooth )); then
-    error 'invalid root window size: %dx%d' "$rootw" "$rooth"
-    exit 1
-fi
-
-declare -- offsets i=0 wid=0 geospec
-declare -a offsets_list=() heads=() head_ids_bad=()
-
-if (( ${#head_ids[@]} )); then
-    if ! xdpyinfo_list_heads | xdpyinfo_get_heads_by_ref heads; then
-        error 'failed to get head list'
-        exit 1
-    fi
-    debug '%s' "$(declare -p heads)"
-    get_offsets_list_by_heads_by_ref heads head_ids offsets_list head_ids_bad
-    debug '%s' "$(declare -p offsets_list)"
-    if (( ! ${#offsets_list[@]} )); then
-        error 'none of the specified head IDs exists'
-        exit 1
-    fi
-    if (( ${#head_ids_bad[@]} )); then
-        warn "ignored non-existent head IDs: %s" "${head_ids_bad[*]}"
-    fi
-    offsets_list=("${offsets_list[@]}")  # indexing
-    i=${#offsets_list[@]}
-fi
-
-for geospec in "${geospecs[@]}"; do
-    if ! offsets=$(get_offsets_by_geospec "$geospec"); then
-        warn "ignored invalid geospec: \`%s'" "$geospec"
-    else
-        offsets_list[i++]=$offsets
-        debug_array_by_key offsets_list $(( i - 1 ))
-    fi
+for ref_rect in "${rects[@]}"; do
+    offsets_list+=("$ref_rect")
 done
 
-if [[ $region_select_action == *f* ]]; then
-    if ! LC_ALL=C xprop -root -notype _NET_SUPPORTED |
-        grep -qw _NET_FRAME_EXTENTS; then
-        frame_extents_support=0
-        warn 'no _NET_FRAME_EXTENTS support, falling back to xwininfo -frame'
-    fi
-fi
-
-printf '%s' "$region_select_action" |
-while read -n 1; do
-    case $REPLY in
-        's')
-            offsets_list[i++]=$(select_region_get_offsets)
-            debug_array_by_key offsets_list $(( i - 1 ))
-            ;;
-        'w')
-            offsets_list[i++]=$(select_window_get_offsets)
-            debug_array_by_key offsets_list $(( i - 1 ))
-            ;;
-        '#')
-            offsets_list[i++]=$(window_id_get_offsets "${window_ids[wid]}")
-            (( ++wid ))
-            debug_array_by_key offsets_list $(( i - 1 ))
-            ;;
-        'b')
-            borders=1
-            verbose "windows: now including borders"
-            ;;
-        'f')
-            frame=1
-            verbose "windows: now including window manager frame"
-            ;;
-    esac
-done
-
-if (( i )); then
+if (( ${#offsets_list[@]} )); then
     if (( intersection )); then
         offsets=$(get_max_offsets "${offsets_list[@]}")
         debug "get_max_offsets offsets_list[@] -> offsets='%s'" "$offsets"
