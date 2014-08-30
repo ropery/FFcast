@@ -36,21 +36,21 @@ declare -- verbosity=2
 declare -A sub_commands=() sub_cmdfuncs=()
 declare -a rects=() regions=()
 declare -A heads=() windows=() heads_all=()
-declare -- rootw=0 rooth=0 _x=0 _y=0 x_=0 y_=0 w=0 h=0
+declare -- {root_{w,h},rect_{w,h,x,y,X,Y}}=0
 declare -- borders=0 frame=0 frame_extents_support=1 intersection=0
 
 declare -A fmtmap=(
     ['D']='$DISPLAY'
-    ['h']='$h'
-    ['w']='$w'
-    ['x']='$_x'
-    ['y']='$_y'
-    ['X']='$x_'
-    ['Y']='$y_'
-    ['c']='$_x,$_y'
-    ['C']='$x_,$y_'
-    ['g']='${w}x$h+$_x+$_y'
-    ['s']='${w}x$h')
+    ['h']='$rect_h'
+    ['w']='$rect_w'
+    ['x']='$rect_x'
+    ['y']='$rect_y'
+    ['X']='$rect_X'
+    ['Y']='$rect_Y'
+    ['c']='$rect_x,$rect_y'
+    ['C']='$rect_X,$rect_Y'
+    ['g']='${rect_w}x$rect_h+$rect_x+$rect_y'
+    ['s']='${rect_w}x$rect_h')
 
 #---
 # Functions
@@ -92,10 +92,8 @@ _quote_cmd_line() {
 }
 
 _report_array_by_key() {
-    local varname=$1
     local -n ref_array=$1
-    local key=$2
-    printf '%q[%q]=%q\n' "$varname" "$key" "${ref_array[$key]}"
+    printf '%q[%q]=%q\n' "$1" "$2" "${ref_array[$2]}"
 }
 
 debug_array_by_key() {
@@ -127,26 +125,28 @@ done
 substitute_format_strings() {
     local -n ref_fmtmap=$1
     local -n ref_strarr=$2
-    local fmt str c
+    shift 2
+    local noref_str
     ref_strarr=()
-    for fmt in "${@:3}"; do
-        str=
-        printf '%s' "$fmt" |
-        while IFS= read -r -n 1 -d '' c; do
-            if [[ $c == '%' ]]; then
-                IFS= read -r -n 1 -d '' c || :
-                if [[ -v ref_fmtmap[$c] ]]; then
-                    eval "str+=${ref_fmtmap[$c]}"
-                elif [[ $c == '%' ]]; then
-                    str+='%'
+    while (( $# )); do
+        noref_str=
+        printf '%s' "$1" |
+        while IFS= read -r -n 1 -d ''; do
+            if [[ $REPLY == '%' ]]; then
+                IFS= read -r -n 1 -d '' || :
+                if [[ -v ref_fmtmap[$REPLY] ]]; then
+                    eval "noref_str+=${ref_fmtmap[$REPLY]}"
+                elif [[ $REPLY == '%' ]]; then
+                    noref_str+='%'
                 else
-                    str+="%$c"
+                    noref_str+="%$REPLY"
                 fi
             else
-                str+=$c
+                noref_str+=$REPLY
             fi
         done
-        ref_strarr+=("$str")
+        ref_strarr+=("$noref_str")
+        shift
     done
 }
 
@@ -171,45 +171,40 @@ unset -v mom cmp
 # $1: a geospec
 # $2: variable to assign offsets to
 set_region_by_geospec() {
-    local geospec=$1
-    local _x _y x_ y_ w h
-    local n='?([-+])+([0-9])'
-    local m='?(-)+([0-9])'
-    local N='+([0-9])'
-    local s='@(*([ \t]),*([ \t])|+([ \t]))'
-    # strip whitespaces
-    IFS=$' \t' read -r geospec <<< "$geospec"
-    case $geospec in
-        $n$s$n$s$n$s$n)  # x1,y1 x2,y2
-            IFS=$', \t' read _x _y x_ y_ <<< "$geospec"
+    local -n ref_region=$2
+    local IFS
+    # sanitize whitespaces
+    IFS=$' \t'; set -- $1; set -- "$*"
+    case $1 in
+        ?([-+])+([0-9])+(\ |,)?([-+])+([0-9])+(\ |,)?([-+])+([0-9])+(\ |,)?([-+])+([0-9]))  # x1,y1 x2,y2
+            IFS=' ,'
+            set -- $1
             ;;
-        ${N}x${N}\+${m}\+${m})  # wxh+x+y
-            IFS='x+' read w h _x _y <<< "$geospec"
-            (( x_ = rootw - _x - w )) || :
-            (( y_ = rooth - _y - h )) || :
+        +([0-9])x+([0-9])\+?(-)+([0-9])\+?(-)+([0-9]))  # wxh+x+y
+            IFS='x+'
+            set -- $1
+            set -- "$3" "$4" "$((root_w - $3 - $1))" "$((root_h - $4 - $2))"
             ;;
         *)
             return 1
             ;;
     esac
-    printf -v "$2" '%d %d %d %d' "$_x" "$_y" "$x_" "$y_"
+    IFS=' '
+    ref_region="$*"
 }
 
 # $1: variable to assign offsets to
 set_region_interactively() {
     msg "%s" "please select a region using mouse"
-    printf -v "$1" '%d %d %d %d' $(xrectsel_get_offsets)
+    printf -v "$1" '%s' "$(xrectsel '%x %y %X %Y')"
 }
 
 # $1: array variable to modify
 # $2: variable to assign window ID to
 set_window_interactively() {
     msg "%s" "please click once in target window"
-    local -a args
-    if (( frame && !frame_extents_support )); then
-        args=("-frame")
-    fi
-    xwininfo_get_window_by_ref "$1" "$2" "${args[@]}"
+    (( !frame || frame_extents_support )) || set -- "$1" "$2" -frame
+    xwininfo_get_window_by_ref "$@"
 }
 
 # $1: a window ID
@@ -228,54 +223,41 @@ set_window_by_id() {
 # stdin: xdpyinfo -ext XINERAMA (preferably sanitized)
 # $1: array variable to assign heads to, i.e. =([id]=offsets ...)
 xdpyinfo_get_heads_by_ref() {
-    local line
-    local i w h _x _y x_ y_
-    local n='+([0-9])'
-    # See print_xinerama_info() in xdpyinfo.c
-    local head="head #$n: ${n}x$n @ $n,$n"
-    while IFS=' ' read -r line; do
-        if [[ $line == $head ]]; then
-            IFS=' :x@,' read i w h _x _y <<< "${line#head #}"
-            (( x_ = rootw - _x - w )) || :
-            (( y_ = rooth - _y - h )) || :
-            printf -v "$1[$i]" '%d %d %d %d' "$_x" "$_y" "$x_" "$y_"
+    local -n ref_heads=$1
+    local IFS
+    while IFS=' ' read -r REPLY; do
+        REPLY=${REPLY#head #}
+        if [[ $REPLY == +([0-9]):\ +([0-9])x+([0-9])' @ '+([0-9]),+([0-9]) ]]; then
+            IFS=' :x@,'
+            set -- $REPLY
+            set -- "$1" "$4" "$5" "$((root_w - $4 - $2))" "$((root_h - $5 - $3))"
+            IFS=' '
+            ref_heads["$1"]="${*:2}"
         fi
     done
-    [[ -n $i ]]
+    (( $# == 5 ))
 }
 
 xdpyinfo_list_heads() {
     LC_ALL=C xdpyinfo -ext XINERAMA | grep '^  head #' | sed 's/^ *//'
 }
 
-# stdout: left, right, top, bottom
-# $1: window ID
-xprop_get_frame_extents() {
-    LC_ALL=C xprop -id "$1" -notype _NET_FRAME_EXTENTS |
-    grep '^_NET_FRAME_EXTENTS = ' | sed 's/.*= //'
-}
-
-# stdout: x1 y1 x2 y2
-xrectsel_get_offsets() {
-    # Note: requires xrectsel 0.3
-    xrectsel "%x %y %X %Y"$'\n'
-}
-
 # stdin: xwininfo output (locale: C)
-# stdout: ${width}x${height}
+# stdout: wxh
 xwininfo_get_size() {
-    local line
-    local w h
-    while IFS=$' \t' read -r line; do
-        if [[ $line == 'Width: '+([0-9]) ]]; then
-            w=${line#'Width: '}
-        elif [[ $line == 'Height: '+([0-9]) ]]; then
-            h=${line#'Height: '}
+    local IFS
+    set --
+    while IFS=$' \t' read -r REPLY; do
+        if [[ $REPLY == 'Width: '+([0-9]) ]]; then
+            set -- "${REPLY#'Width: '}" "$@"
+        elif [[ $REPLY == 'Height: '+([0-9]) ]]; then
+            set -- "$@" "${REPLY#'Height: '}"
         else
             continue
         fi
-        if (( w && h )); then
-            printf '%dx%d\n' "$w" "$h"
+        if (( $# == 2 )); then
+            IFS=x
+            printf '%s\n' "$*"
             return
         fi
     done
@@ -286,54 +268,57 @@ xwininfo_get_size() {
 # $2: variable to assign window ID to
 # ${@:3} are passed to xwininfo
 xwininfo_get_window_by_ref() {
-    local line
-    local _x _y x_ y_ b
-    local fl fr ft fb id
-    local n='-?[0-9]+'
-    local corners="^Corners: *\\+($n)\\+($n) *-$n\\+$n *-($n)-($n) *\\+$n-$n\$"
-    local window_id="^xwininfo: Window id: (0x[[:xdigit:]]+)"
-    LC_ALL=C xwininfo "${@:3}" |
-    # Note: explicitly set IFS to ensure stripping of whitespaces
-    while IFS=$' \t' read -r line && [[ -z $id || -z $_x || -z $b ]]; do
-        if [[ $line =~ $window_id ]]; then
-            id=${BASH_REMATCH[1]}
-        elif [[ $line == 'Border width: '+([0-9]) ]]; then
-            b=${line#'Border width: '}
-        elif [[ $line =~ $corners ]]; then
-            _x=${BASH_REMATCH[1]}
-            _y=${BASH_REMATCH[2]}
-            x_=${BASH_REMATCH[3]}
-            y_=${BASH_REMATCH[4]}
-        fi
-    done
-    [[ -n $id && -n $_x && -n $b ]] || return 1
-    if (( frame && frame_extents_support )); then
-        if ! xprop_get_frame_extents "$id" | IFS=' ,' read fl fr ft fb; then
-            warn "unable to determine frame extents for window %s" "$id"
-        else
-            (( _x -= fl )) || :
-            (( _y -= ft )) || :
-            (( x_ -= fr )) || :
-            (( y_ -= fb )) || :
-        fi
-    elif (( ! borders )); then
-            (( _x += b )) || :
-            (( _y += b )) || :
-            (( x_ += b )) || :
-            (( y_ += b )) || :
-    fi
-    printf -v "$1[$id]" '%d %d %d %d' "$_x" "$_y" "$x_" "$y_"
-    printf -v "$2" '%s' "$id"
+    local -n ref_windows=$1
+    local -n ref_id=$2
+    export LC_ALL=C
+    xwininfo "${@:3}" |
+    awk -v borders="$borders" -v frame="$((frame && frame_extents_support))" '
+    BEGIN { OFS = " " }
+    /^xwininfo: Window id: 0x[[:xdigit:]]+ / { _id = $4 }
+    /^ *Border width: [[:digit:]]+$/ { _bw = $3 }
+    $1 == "Corners:" && NF == 5 && split($2, a, /\+/) == 3 {
+        _ol = a[2]
+        _ot = a[3]
+        if (split($3, a, /\+/) == 2) {
+            _or = substr(a[1], 2)
+            _ob = substr($4, length(a[1]) + 2)
+        }
+    }
+    END {
+        if (_id == "" || _bw == "" || _ob == "")
+            exit 1
+        if (frame) {
+            xprop = "xprop -id \"" _id "\" -notype _NET_FRAME_EXTENTS"
+            while ((xprop | getline) && ($1 != "_NET_FRAME_EXTENTS"));
+            close(xprop)
+            if ($1 == "_NET_FRAME_EXTENTS") {
+                sub(/.*= /, "")
+                split($0, a, /[ ,]+/)
+                _ol -= a[1]; _ot -= a[3]; _or -= a[2]; _ob -= a[4]
+            }
+        }
+        else if (!borders) {
+            _ol += _bw; _ot += _bw; _or += _bw; _ob += _bw
+        }
+        print _id
+        print _ol, _ot, _or, _ob
+    }' |
+    {
+        read -r
+        ref_id=$REPLY
+        read -r
+        ref_windows["$ref_id"]=$REPLY
+    }
 }
 
 run_default_command() {
-    printf '%dx%d+%d+%d\n' "$w" "$h" "$_x" "$_y"
+    printf '%dx%d+%d+%d\n' "$rect_w" "$rect_h" "$rect_x" "$rect_y"
 }
 
 run_external_command() {
     local -- cmd=$1 extcmd
     shift || return 0
-    local -a args=()
+    local -a args
     # always substitute format strings for external commands
     substitute_format_strings fmtmap args "$@"
     # make sure it's an external command -- a disk file
@@ -368,16 +353,17 @@ run_subcmd_or_command() {
 set_region_vars_by_offsets() {
     offsets=$(get_max_offsets "$offsets" '0 0 0 0')
     debug "sanitize offsets -> offsets='%s'" "$offsets"
-    IFS=' ' read _x _y x_ y_ <<< "$offsets"
-    (( w = rootw - _x - x_ )) || :
-    (( h = rooth - _y - y_ )) || :
-    local var
+    IFS=' ' read rect_{x,y,X,Y} <<< "$offsets"
+    (( rect_w = root_w - rect_x - rect_X )) || :
+    (( rect_h = root_h - rect_y - rect_Y )) || :
+    set -- rect_{w,h,x,y,X,Y}
     debug 'set region variables'
-    for var in w h _{x,y} {x,y}_; do
-        debug '\t%s' "$(declare -p "$var")"
+    while (( $# )); do
+        debug '\t%s' "$(declare -p "$1")"
+        shift
     done
-    if ! (( w > 0 && h > 0 )); then
-        "${logl[${1:-0}]}" 'invalid region size: %sx%s' "$w" "$h"
+    if ! (( rect_w > 0 && rect_h > 0 )); then
+        error 'invalid region size: %sx%s' "$rect_w" "$rect_h"
         return 1
     fi
 }
@@ -414,7 +400,7 @@ EOF
   exit "${1:-0}"
 }
 
-LC_ALL=C xwininfo -root | xwininfo_get_size | IFS=x read rootw rooth || usage 1
+LC_ALL=C xwininfo -root | xwininfo_get_size | IFS=x read root_{w,h} || usage 1
 
 declare -- i=0 id= opt= var=
 declare -a ids
@@ -464,13 +450,13 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
             rects[i++]=$var
             ;;
        \#)
-            set_window_by_id "$OPTARG" windows var || exit
-            var="windows[$var]"
+            set_window_by_id "$OPTARG" windows id || exit
+            var="windows[$id]"
             rects[i++]=$var
             ;;
         w)
-            set_window_interactively windows var
-            var="windows[$var]"
+            set_window_interactively windows id
+            var="windows[$id]"
             rects[i++]=$var
             ;;
         b)

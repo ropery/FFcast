@@ -13,8 +13,8 @@
 # name, or when it conflicts with an existing function.
 #
 # As this file is sourced after all the geometry processing has been done, you
-# have access to, among others, the variables $w $h $_x $_y $x_ $y_ and all the
-# functions defined in ffcast.
+# have access to, among others, the variables $rect_w $rect_h $rect_x $rect_y
+# $rect_X $rect_Y and all the functions defined in ffcast.
 #
 # The positional arguments to a sub-command function are all the arguments
 # after the sub-command as specified on the command line by the user.
@@ -52,7 +52,7 @@ sub_cmdfuncs['%']=run_external_command
 sub_commands['dump']='dump region-related variables in bash code'
 sub_cmdfuncs['dump']=subcmd_dump
 subcmd_dump() {
-    declare -p {root,}{w,h} _{x,y} {x,y}_ rects heads regions windows
+    declare -p {root_{w,h},rect_{w,h,x,y,X,Y}} rects heads regions windows
 }
 
 sub_commands['each']='run a sub-command on each selection consecutively'
@@ -69,7 +69,7 @@ subcmd_each() {
         i=${rects[n]#*\[}; i=${i%\]}
         substitute_format_strings fmtmap_each args "$@"
         offsets=$ref_rect
-        set_region_vars_by_offsets 1 || continue
+        set_region_vars_by_offsets || continue
         run_subcmd_or_command "${args[@]}"
         unset -n ref_rect
     done
@@ -80,7 +80,7 @@ sub_cmdfuncs['pad']=subcmd_pad
 subcmd_pad() {
     : 'usage: pad <padding> [sub-command]'
     local -- t r b l
-    IFS=' \t,' read -r t r b l <<< "$1"
+    IFS=$' \t,' read -r t r b l <<< "$1"
     shift || return 0
     if [[ -z $t ]]; then
         return
@@ -93,12 +93,12 @@ subcmd_pad() {
     else
         local -i t=$t r=$r b=$b l=$l
     fi
-    (( _x -= l )) || :
-    (( _y -= t )) || :
-    (( x_ -= r )) || :
-    (( y_ -= b )) || :
+    (( rect_x -= l )) || :
+    (( rect_y -= t )) || :
+    (( rect_X -= r )) || :
+    (( rect_Y -= b )) || :
     verbose 'padding: top=%d right=%d bottom=%d left=%d' "$t" "$r" "$b" "$l"
-    offsets="$_x $_y $x_ $y_"
+    offsets="$rect_x $rect_y $rect_X $rect_Y"
     set_region_vars_by_offsets || exit
     run_subcmd_or_command "$@"
 }
@@ -109,11 +109,12 @@ subcmd_png() {
     : 'usage: png [filename]'
     local -a args
     substitute_format_strings fmtmap args "$@"
-    : ${args[0]="$(printf '%s-%(%s)T_%dx%d.png' screenshot -1 "$w" "$h")"}
+    : ${args[0]="$(printf '%s-%(%s)T_%dx%d.png' screenshot -1 \
+        "$rect_w" "$rect_h")"}
     msg 'saving to file: %s' "${args[-1]}"  # unreliable
     verbose_run command -- \
         ffmpeg -loglevel error -f x11grab -draw_mouse 0 -show_region 1 \
-        -video_size "${w}x$h" -i "$DISPLAY+$_x,$_y" \
+        -video_size "${rect_w}x$rect_h" -i "$DISPLAY+$rect_x,$rect_y" \
         -f image2 -codec:v png -frames:v 1 "${args[@]}"
 }
 
@@ -135,8 +136,9 @@ subcmd_rec() {
     : ${args[0]="$(printf '%s-%(%s)T.mkv' screencast -1)"}
     msg 'saving to file: %s' "${args[-1]}"  # unreliable
     verbose_run command -- \
-        ffmpeg -loglevel "${v[verbosity]}" -f x11grab -show_region 1 \
-        -framerate 25 -video_size "${w}x$h" -i "$DISPLAY+$_x,$_y" \
+        ffmpeg -loglevel "${v[verbosity]}" \
+        -f x11grab -show_region 1 -framerate 25 \
+        -video_size "${rect_w}x$rect_h" -i "$DISPLAY+$rect_x,$rect_y" \
         -filter:v crop="iw-mod(iw\\,$m):ih-mod(ih\\,$m)" "${args[@]}"
 }
 
