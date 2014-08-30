@@ -99,7 +99,8 @@ Note I<E<lt>argsE<gt>> to an internal I<E<lt>sub-commandE<gt>> are not
 automatically subject to format string substitution, although sub-commands may
 choose to do format string substitution on their own.
 
-The following format strings are supported:
+The following format strings are supported for all external commands, as well
+as the sub-commands B<png> and B<rec>:
 
 =over 4
 
@@ -147,11 +148,29 @@ Equivalent to B<%wx%h+%x+%y>
 
 Equivalent to B<%wx%h>
 
-=item B<%%>
+=back
 
-A literal %
+The B<each> sub-command supports the following format strings:
+
+=over 4
+
+=item B<%i>
+
+The identifier of the selection
+
+=item B<%n>
+
+This being the I<n>th selection
+
+=item B<%t>
+
+The type of the selection
 
 =back
+
+The format string B<%%> is always substituted for a literal C<%>, whenever
+format string substitution is performed. Therefore, multiple levels of
+escaping may be required when sub-commands are chained.
 
 =head1 GEOMETRY SPECIFICATION
 
@@ -228,9 +247,10 @@ head 0, using either of:
     ffcast -ww ffcast -i -x 0 -g %g png
 
 Take three individual screenshots of heads 0, 1, 2, one by one. The B<each>
-command runs a command for each user selection consecutively:
+command runs a command for each user selection consecutively; it supports
+several format strings:
 
-    ffcast -x 0,1,2 each png head_%g.png
+    ffcast -x 0,1,2 each png %t_%i-%s.png
 
 =head1 SEE ALSO
 

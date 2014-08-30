@@ -52,18 +52,27 @@ sub_cmdfuncs['%']=run_external_command
 sub_commands['dump']='dump region-related variables in bash code'
 sub_cmdfuncs['dump']=subcmd_dump
 subcmd_dump() {
-    (( ! ${#head_ids[@]} )) || declare -p heads
-    declare -p {root,}{w,h} _{x,y} {x,y}_ offsets_list
+    declare -p {root,}{w,h} _{x,y} {x,y}_ offsets_list \
+        rects heads regions windows
 }
 
 sub_commands['each']='run a sub-command on each selection consecutively'
 sub_cmdfuncs['each']=subcmd_each
 subcmd_each() {
     : 'usage: each [sub-command]'
-    local offsets;
-    for offsets in "${offsets_list[@]}"; do
+    local -A fmtmap_each=(['i']='$i' ['n']='$((n + 1))' ['t']='$t')
+    local -a args
+    local -i n
+    local -- i t
+    for ((n=0; n<${#rects[@]}; ++n)); do
+        local -n ref_rect=${rects[n]}
+        t=${rects[n]%%\[*}; t=${t%s}
+        i=${rects[n]#*\[}; i=${i%\]}
+        substitute_format_strings fmtmap_each args "$@"
+        offsets=$ref_rect
         set_region_vars_by_offsets 1 || continue
-        run_subcmd_or_command "$@"
+        run_subcmd_or_command "${args[@]}"
+        unset -n ref_rect
     done
 }
 
@@ -99,7 +108,7 @@ sub_commands['png']='take a screenshot and save it as a PNG image'
 sub_cmdfuncs['png']=subcmd_png
 subcmd_png() {
     : 'usage: png [filename]'
-    local -a args=()
+    local -a args
     substitute_format_strings fmtmap args "$@"
     : ${args[0]="$(printf '%s-%(%s)T_%dx%d.png' screenshot -1 "$w" "$h")"}
     msg 'saving to file: %s' "${args[-1]}"  # unreliable
@@ -113,7 +122,7 @@ sub_commands['rec']='record a screencast'
 sub_cmdfuncs['rec']=subcmd_rec
 subcmd_rec() {
     : 'usage: rec [-m <n>] [filename.ext]'
-    local -a args=()
+    local -a args
     local -a v=(fatal error info verbose debug)  # ffmpeg loglevels
     local m=1 opt
     OPTIND=1
