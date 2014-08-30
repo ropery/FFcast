@@ -92,13 +92,6 @@ parameters.
 
 =head1 FORMAT STRINGS
 
-All I<E<lt>argsE<gt>> to an external I<E<lt>commandE<gt>> are always subject
-to format string substitution.
-
-Note I<E<lt>argsE<gt>> to an internal I<E<lt>sub-commandE<gt>> are not
-automatically subject to format string substitution, although sub-commands may
-choose to do format string substitution on their own.
-
 The following format strings are supported for all external commands, as well
 as the sub-commands B<png> and B<rec>:
 
@@ -192,7 +185,7 @@ respectively.
 
 =head1 SUB-COMMANDS
 
-The first normal argument is looked up first in the list of sub-commands. If
+The first normal argument is first looked up in the list of sub-commands. If
 there is no match, it is executed as an external command.
 
 To bypass sub-command lookup entirely, use B<%> I<command>.

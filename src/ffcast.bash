@@ -282,7 +282,6 @@ xwininfo_get_size() {
     return 1
 }
 
-# stdout: x1 y1 x2 y2
 # $1: array variable to modify
 # $2: variable to assign window ID to
 # ${@:3} are passed to xwininfo
@@ -417,7 +416,8 @@ EOF
 
 LC_ALL=C xwininfo -root | xwininfo_get_size | IFS=x read rootw rooth || usage 1
 
-declare i=0 var=
+declare -- i=0 id= opt= var=
+declare -a ids
 OPTIND=1
 while getopts ':#:bfg:hiqsvwx:' opt; do
     case $opt in
@@ -434,7 +434,11 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
                 debug 'got all Xinerama heads'
                 debug '\t%s' "$(declare -p heads_all)"
             fi
-            IFS=' ,' read -a ids <<< "$OPTARG"
+            if [[ $OPTARG == all ]]; then
+                ids=("${!heads_all[@]}")
+            else
+                IFS=' ,' read -a ids <<< "$OPTARG"
+            fi
             for id in "${ids[@]}"; do
                 if [[ $id != +([0-9]) ]]; then
                     warn "ignored invalid head ID: \'%s'" "$id"
