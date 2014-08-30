@@ -157,6 +157,7 @@ printf '%s %s\n' max '>' min '<' | while IFS=' ' read -r mom cmp; do
         local {,_}{l,t,r,b}
         IFS=" " read l t r b <<< "$offsets"
         for offsets in "$@"; do
+            [[ -n $offsets ]] || continue
             IFS=" " read _{l,t,r,b} <<< "$offsets"
             for o in l t r b; do
                 eval "(( (_$o '$cmp' $o) && ($o = _$o) )) || :"
@@ -367,7 +368,7 @@ run_subcmd_or_command() {
 
 set_region_vars_by_offsets() {
     offsets=$(get_max_offsets "$offsets" '0 0 0 0')
-    debug "get_max_offsets offsets '0 0 0 0' -> offsets='%s'" "$offsets"
+    debug "sanitize offsets -> offsets='%s'" "$offsets"
     IFS=' ' read _x _y x_ y_ <<< "$offsets"
     (( w = rootw - _x - x_ )) || :
     (( h = rooth - _y - y_ )) || :
@@ -493,28 +494,18 @@ shift $(( OPTIND - 1 ))
 #---
 # Combine all rectangles
 
-declare -- offsets
-declare -a offsets_list=()
+declare -- mom offsets=
 declare -n ref_rect
 
-for ref_rect in "${rects[@]}"; do
-    offsets_list+=("$ref_rect")
-done
+(( intersection )) && mom=max || mom=min
 
-if (( ${#offsets_list[@]} )); then
-    if (( intersection )); then
-        offsets=$(get_max_offsets "${offsets_list[@]}")
-        debug "get_max_offsets offsets_list[@] -> offsets='%s'" "$offsets"
-    else
-        offsets=$(get_min_offsets "${offsets_list[@]}")
-        debug "get_min_offsets offsets_list[@] -> offsets='%s'" "$offsets"
-    fi
-else
-    verbose 'no valid user selection, falling back to fullscreen'
-    offsets='0 0 0 0'
-    offsets_list=("$offsets")
-    debug '%s' "$(declare -p offsets_list)"
-fi
+for ref_rect in "${rects[@]}"; do
+    offsets=$(get_"$mom"_offsets "$ref_rect" "${offsets}")
+    debug "get_%s_offsets -> offsets='%s'" "$mom" "$offsets"
+done
+: ${offsets:='0 0 0 0'}
+unset -n ref_rect
+unset -v mom
 
 set_region_vars_by_offsets || exit
 
