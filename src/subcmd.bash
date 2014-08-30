@@ -100,10 +100,7 @@ sub_cmdfuncs['png']=subcmd_png
 subcmd_png() {
     : 'usage: png [filename]'
     local -a args=()
-    while (( $# )); do
-        args+=("$(format_to_string "$1")")
-        shift
-    done
+    substitute_format_strings fmtmap args "$@"
     : ${args[0]="$(printf '%s-%(%s)T_%dx%d.png' screenshot -1 "$w" "$h")"}
     msg 'saving to file: %s' "${args[-1]}"  # unreliable
     verbose_run command -- \
@@ -126,10 +123,7 @@ subcmd_rec() {
         esac
     done
     shift $(( OPTIND - 1 ))
-    while (( $# )); do
-        args+=("$(format_to_string "$1")")
-        shift
-    done
+    substitute_format_strings fmtmap args "$@"
     : ${args[0]="$(printf '%s-%(%s)T.mkv' screencast -1)"}
     msg 'saving to file: %s' "${args[-1]}"  # unreliable
     verbose_run command -- \

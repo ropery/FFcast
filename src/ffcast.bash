@@ -39,6 +39,19 @@ declare -A heads=() windows=() heads_all=()
 declare -- rootw=0 rooth=0 _x=0 _y=0 x_=0 y_=0 w=0 h=0
 declare -- borders=0 frame=0 frame_extents_support=1 intersection=0
 
+declare -A fmtmap=(
+    ['D']='$DISPLAY'
+    ['h']='$h'
+    ['w']='$w'
+    ['x']='$_x'
+    ['y']='$_y'
+    ['X']='$x_'
+    ['Y']='$y_'
+    ['c']='$_x,$_y'
+    ['C']='$x_,$y_'
+    ['g']='${w}x$h+$_x+$_y'
+    ['s']='${w}x$h')
+
 #---
 # Functions
 
@@ -108,32 +121,33 @@ for ((i=3; i<${#logl[@]}; ++i)); do
     }"
 done
 
-format_to_string() {
-    local fmt=$1 str c
-    printf '%s' "$fmt" |
-    while IFS= read -r -n 1 -d '' c; do
-        if [[ $c == '%' ]]; then
-            IFS= read -r -n 1 -d '' c || :
-            case $c in
-                '%') str+='%';;
-                'D') str+=$DISPLAY;;
-                'h') str+=$h;;
-                'w') str+=$w;;
-                'x') str+=$_x;;
-                'y') str+=$_y;;
-                'X') str+=$x_;;
-                'Y') str+=$y_;;
-                'c') str+=$_x,$_y;;
-                'C') str+=$x_,$y_;;
-                'g') str+=${w}x$h+$_x+$_y;;
-                's') str+=${w}x$h;;
-                *) str+="%$c";;
-            esac
-        else
-            str+=$c
-        fi
+# $1: array variable of format string mappings
+# $2: array variable to assign substitution results to
+# ${@:3} are strings to be substituted
+substitute_format_strings() {
+    local -n ref_fmtmap=$1
+    local -n ref_strarr=$2
+    local fmt str c
+    ref_strarr=()
+    for fmt in "${@:3}"; do
+        str=
+        printf '%s' "$fmt" |
+        while IFS= read -r -n 1 -d '' c; do
+            if [[ $c == '%' ]]; then
+                IFS= read -r -n 1 -d '' c || :
+                if [[ -v ref_fmtmap[$c] ]]; then
+                    eval "str+=${ref_fmtmap[$c]}"
+                elif [[ $c == '%' ]]; then
+                    str+='%'
+                else
+                    str+="%$c"
+                fi
+            else
+                str+=$c
+            fi
+        done
+        ref_strarr+=("$str")
     done
-    printf '%s' "$str";
 }
 
 printf '%s %s\n' max '>' min '<' | while IFS=' ' read -r mom cmp; do
@@ -321,10 +335,7 @@ run_external_command() {
     shift || return 0
     local -a args=()
     # always substitute format strings for external commands
-    while (( $# )); do
-        args+=("$(format_to_string "$1")")
-        shift
-    done
+    substitute_format_strings fmtmap args "$@"
     # make sure it's an external command -- a disk file
     if ! extcmd=$(type -P "$cmd"); then
         error "external command '%s' not found" "$cmd"
