@@ -171,12 +171,12 @@ unset -v mom cmp
 # $1: a geospec
 # $2: variable to assign offsets to
 set_region_by_geospec() {
-    local -n ref_region=$2
+    local noref_region=$2
     local IFS
     # sanitize whitespaces
     IFS=$' \t'; set -- $1; set -- "$*"
     case $1 in
-        ?([-+])+([0-9])+(\ |,)?([-+])+([0-9])+(\ |,)?([-+])+([0-9])+(\ |,)?([-+])+([0-9]))  # x1,y1 x2,y2
+        ?(-)+([0-9])+(\ |,)?(-)+([0-9])+(\ |,)?(-)+([0-9])+(\ |,)?(-)+([0-9]))  # x1,y1 x2,y2
             IFS=' ,'
             set -- $1
             ;;
@@ -190,7 +190,7 @@ set_region_by_geospec() {
             ;;
     esac
     IFS=' '
-    ref_region="$*"
+    printf -v "$noref_region" '%s' "$*"
 }
 
 # $1: variable to assign offsets to
@@ -439,7 +439,7 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
         g)
             var="regions[${#regions[@]}]"
             if ! set_region_by_geospec "$OPTARG" "$var"; then
-                warn "ignored invalid geospec: \`%s'" "$geospec"
+                warn "ignored invalid geospec: \`%s'" "$OPTARG"
             else
                 rects[i++]=$var
             fi
