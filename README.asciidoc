@@ -5,7 +5,8 @@ NOTE: Since FFcast 2.2.0, https://github.com/lolilolicon/xrectsel.git[xrectsel]
 has become a separate project. Packagers should from now on package xrectsel
 separately, and make FFcast depend on it.
 
-NOTE: Users of FFcast 1.0 will have to update their command lines. See issue #8.
+NOTE: Users of FFcast 1.0 will have to update their command lines. See
+https://github.com/lolilolicon/FFcast/issues/8#issuecomment-52167381[issue #8].
 
 FFcast helps the user interactively select a screen region and hands over the
 geometry to an external command, such as FFmpeg, to record a screencast, or
@@ -23,14 +24,12 @@ in a straight-forward manner, to tailor to their own needs.
 Requirements
 ------------
 
-.FFcast
-
-  * Bash 4.3+
-  * FFmpeg   - for some sub-commands (`png`, `rec`)
-  * xdpyinfo - for the `-x` option
-  * xprop    - for the `-f` option
-  * https://github.com/lolilolicon/xrectsel.git[xrectsel] - for the `-s` option
-  * xwininfo - for the `-w` option
+* Bash 4.3+
+* FFmpeg   - for some sub-commands (`png`, `rec`)
+* xdpyinfo - for the `-x` option
+* xprop    - for the `-f` option
+* https://github.com/lolilolicon/xrectsel.git[xrectsel] - for the `-s` option
+* xwininfo - for the `-w` option
 
 Get the Source
 --------------
@@ -62,7 +61,7 @@ https://aur.archlinux.org/packages/ffcast/[AUR/ffcast].
 Usage
 -----
 
-See +ffcast(1)+.
+See link:doc/ffcast.1.pod[+ffcast(1)+].
 
 ////
 vim:ts=2:sw=2:syntax=asciidoc:et:spell:spelllang=en_us:cc=80:

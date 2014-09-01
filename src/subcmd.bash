@@ -24,7 +24,7 @@ sub_cmdfuncs['help']=subcmd_help
 subcmd_help() {
     : 'usage: help [sub-command]'
     local sub_cmd=$1
-    if ! (( $# )); then
+    if ! (($#)); then
         for sub_cmd in "${!sub_commands[@]}"; do
             printf "%s\t%s\n" "$sub_cmd" "${sub_commands[$sub_cmd]}"
         done | sort -k 1,1
@@ -60,17 +60,17 @@ sub_cmdfuncs['each']=subcmd_each
 subcmd_each() {
     : 'usage: each [sub-command]'
     local -A fmtmap_each=(['i']='$i' ['n']='$((n + 1))' ['t']='$t')
-    local -a args
+    local -a __args
     local -i n
     local -- i t
     for ((n=0; n<${#rects[@]}; ++n)); do
         local -n ref_rect=${rects[n]}
         t=${rects[n]%%\[*}; t=${t%s}
         i=${rects[n]#*\[}; i=${i%\]}
-        substitute_format_strings fmtmap_each args "$@"
+        substitute_format_strings fmtmap_each __args "$@"
         offsets=$ref_rect
         set_region_vars_by_offsets || continue
-        run_subcmd_or_command "${args[@]}"
+        run_subcmd_or_command "${__args[@]}"
         unset -n ref_rect
     done
 }
@@ -93,10 +93,7 @@ subcmd_pad() {
     else
         local -i t=$t r=$r b=$b l=$l
     fi
-    (( rect_x -= l )) || :
-    (( rect_y -= t )) || :
-    (( rect_X -= r )) || :
-    (( rect_Y -= b )) || :
+    let 'rect_x -= l' 'rect_y -= t' 'rect_X -= r' 'rect_Y -= b' || :
     verbose 'padding: top=%d right=%d bottom=%d left=%d' "$t" "$r" "$b" "$l"
     offsets="$rect_x $rect_y $rect_X $rect_Y"
     set_region_vars_by_offsets || exit
@@ -107,22 +104,22 @@ sub_commands['png']='take a screenshot and save it as a PNG image'
 sub_cmdfuncs['png']=subcmd_png
 subcmd_png() {
     : 'usage: png [filename]'
-    local -a args
-    substitute_format_strings fmtmap args "$@"
-    : ${args[0]="$(printf '%s-%(%s)T_%dx%d.png' screenshot -1 \
+    local -a __args
+    substitute_format_strings fmtmap __args "$@"
+    : ${__args[0]="$(printf '%s-%(%s)T_%dx%d.png' screenshot -1 \
         "$rect_w" "$rect_h")"}
-    msg 'saving to file: %s' "${args[-1]}"  # unreliable
+    msg 'saving to file: %s' "${__args[-1]}"  # unreliable
     verbose_run command -- \
         ffmpeg -loglevel error -f x11grab -draw_mouse 0 -show_region 1 \
         -video_size "${rect_w}x$rect_h" -i "$DISPLAY+$rect_x,$rect_y" \
-        -f image2 -codec:v png -frames:v 1 "${args[@]}"
+        -f image2 -codec:v png -frames:v 1 "${__args[@]}"
 }
 
 sub_commands['rec']='record a screencast'
 sub_cmdfuncs['rec']=subcmd_rec
 subcmd_rec() {
     : 'usage: rec [-m <n>] [filename.ext]'
-    local -a args
+    local -a __args
     local -a v=(fatal error info verbose debug)  # ffmpeg loglevels
     local m=1 opt
     OPTIND=1
@@ -131,15 +128,15 @@ subcmd_rec() {
             m) m=$OPTARG;;
         esac
     done
-    shift $(( OPTIND - 1 ))
-    substitute_format_strings fmtmap args "$@"
-    : ${args[0]="$(printf '%s-%(%s)T.mkv' screencast -1)"}
-    msg 'saving to file: %s' "${args[-1]}"  # unreliable
+    shift $((OPTIND - 1))
+    substitute_format_strings fmtmap __args "$@"
+    : ${__args[0]="$(printf '%s-%(%s)T.mkv' screencast -1)"}
+    msg 'saving to file: %s' "${__args[-1]}"  # unreliable
     verbose_run command -- \
         ffmpeg -loglevel "${v[verbosity]}" \
         -f x11grab -show_region 1 -framerate 25 \
         -video_size "${rect_w}x$rect_h" -i "$DISPLAY+$rect_x,$rect_y" \
-        -filter:v crop="iw-mod(iw\\,$m):ih-mod(ih\\,$m)" "${args[@]}"
+        -filter:v crop="iw-mod(iw\\,$m):ih-mod(ih\\,$m)" "${__args[@]}"
 }
 
 # vim:ts=4:sw=4:et:cc=80:
