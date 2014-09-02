@@ -56,14 +56,20 @@ names will never overlap with external names passed as reference.
 
 The following are the conventions used in this project:
 
-1.  Significant global variables are treated as "well-known names"; functions
-must not set any local variable with one of these names. This is reasonable,
-because functions should not mask these names in the first place.
+1.  Significant global variables are treated as "well-known names"; these names
+    must not be used as local variable names. This is reasonable, because
+    functions should not mask these names in the first place.
 
 2.  Other names, iff they are to be passed as reference, shall be prefixed with
     `__`.
 
 3.  A name shall be prefixed with `ref_` iff it has the nameref attribute.
+
+4.  It follows that a name with the nameref attribute must not be passed as
+    reference.
+
+5.  Prefer positional parameters over named local variables. `set --` or
+    `shift` combined with `IFS` can often eliminate local variables.
 
 Miscellaneous Remarks
 ---------------------
