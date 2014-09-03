@@ -238,7 +238,12 @@ xdpyinfo_get_heads_by_ref() {
 }
 
 xdpyinfo_list_heads() {
-    LC_ALL=C xdpyinfo -ext XINERAMA | sed '/^  head #/!d;s/^ *//'
+    LC_ALL=C xdpyinfo -ext XINERAMA |
+    sed -n '
+    /^XINERAMA extension not supported by xdpyinfo/ { p; q1 }
+    /^XINERAMA version/!d
+    :h; n; s/^  \(head #\)/\1/p; th; q
+    '
 }
 
 # stdout: wxh
