@@ -238,30 +238,19 @@ xdpyinfo_get_heads_by_ref() {
 }
 
 xdpyinfo_list_heads() {
-    LC_ALL=C xdpyinfo -ext XINERAMA | grep '^  head #' | sed 's/^ *//'
+    LC_ALL=C xdpyinfo -ext XINERAMA | sed '/^  head #/!d;s/^ *//'
 }
 
 # stdout: wxh
 # $@: passed to xwininfo
 xwininfo_get_size() {
-    local IFS
-    LC_ALL=C xwininfo "$@" | {
-    set --
-    while IFS=$' \t' read -r REPLY; do
-        if [[ $REPLY == 'Width: '+([0-9]) ]]; then
-            set -- "${REPLY#'Width: '}" "$@"
-        elif [[ $REPLY == 'Height: '+([0-9]) ]]; then
-            set -- "$@" "${REPLY#'Height: '}"
-        else
-            continue
-        fi
-        if (($# == 2)); then
-            IFS=x
-            printf '%s\n' "$*"
-            return
-        fi
-    done; }
-    return 1
+    LC_ALL=C xwininfo "$@" |
+    sed -n '
+    $q1
+    /^  Width: \([0-9]\+\)$/!d
+    s//\1/; h; n
+    /^  Height: \([0-9]\+\)$/!q1
+    s//\1/; H; x; s/\n/x/; p; q'
 }
 
 # $1: array variable to modify
