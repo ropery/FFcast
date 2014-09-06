@@ -370,7 +370,7 @@ usage() {
     cat <<EOF
 ffcast @VERSION@
 Usage:
-  ${0##*/} [options] [sub-command [args]] [command [args]]
+  ${0##*/} [options] [command [args]]
 
 Options:
   -g <geospec>  specify a region in numeric geometry

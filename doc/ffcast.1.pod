@@ -6,7 +6,7 @@ ffcast - run command on rectangular screen regions
 
 =over 4
 
-=item B<ffcast> [<options>] [<sub-command> [<args>]] [<command> [<args>]]
+=item B<ffcast> [ <options> ] [ { <sub-command> | <command> } [ <args> ] ]
 
 =back
 
