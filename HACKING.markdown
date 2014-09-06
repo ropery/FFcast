@@ -46,10 +46,10 @@ A call by reference function can be implemented in several ways:
 
 Such functions must be handled with care. Consider the following:
 
-*   The caller cannot know what local variables are set in the function.
+*   The caller cannot know what local variables are declared in the function.
 *   The function cannot predict what names will be passed by the caller.
-*   When the function sets a local variable with the same name as the name passed
-    by the caller, the external name is masked by the local name.
+*   When the function declares a local variable with the same name as the name
+    passed by the caller, the external name is masked by the local name.
 
 As such, artificial naming conventions have to be established, so that local
 names will never overlap with external names passed as reference.
