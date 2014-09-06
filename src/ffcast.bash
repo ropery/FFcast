@@ -242,8 +242,7 @@ xdpyinfo_list_heads() {
     sed -n '
     /^XINERAMA extension not supported by xdpyinfo/ { p; q1 }
     /^XINERAMA version/!d
-    :h; n; s/^  \(head #\)/\1/p; th; q
-    '
+    :h; n; s/^  \(head #\)/\1/p; th; q'
 }
 
 # stdout: wxh
