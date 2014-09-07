@@ -5,6 +5,11 @@ This is the guide for anyone who wants to contribute to FFcast. It concerns
 style and conventions for this project, as well as general best practice in
 programming in the Bourne-Again SHell language.
 
+To understand how FFcast works, besides reading the script, you are encouraged
+to experiment with the debug messages enabled, by passing `-vv` as the first
+parameter to `ffcast`; the `dump` sub-command exposes the important global
+variables via `declare -p`, which should help you grasp their meaning and use.
+
 Coding Style
 ------------
 
