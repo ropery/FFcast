@@ -150,7 +150,7 @@ unset -v mom cmp
 
 set_region_vars_by_offsets() {
     offsets=$(get_max_offsets "$offsets" '0 0 0 0')
-    debug "sanitize offsets -> offsets='%s'" "$offsets"
+    debug 'sanitize offsets -> offsets="%s"' "$offsets"
     IFS=' ' read rect_{x,y,X,Y} <<< "$offsets"
     ((rect_w = root_w - rect_x - rect_X)) || :
     ((rect_h = root_h - rect_y - rect_Y)) || :
@@ -412,7 +412,8 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
                     warn "ignored invalid head ID: \`%s'" "$id"
                 else
                     heads[$id]=${heads_all[$id]}
-                    rects[i++]="heads[$id]"
+                    var="heads[$id]"
+                    rects[i++]=$var; verbose 'rect: %s="%s"' "$var" "${!var}"
                 fi
             done
             ;;
@@ -421,23 +422,23 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
             if ! set_region_by_geospec "$OPTARG" "$var"; then
                 warn "ignored invalid geospec: \`%s'" "$OPTARG"
             else
-                rects[i++]=$var
+                rects[i++]=$var; verbose 'rect: %s="%s"' "$var" "${!var}"
             fi
             ;;
         s)
             var="regions[${#regions[@]}]"
             set_region_interactively "$var"
-            rects[i++]=$var
+            rects[i++]=$var; verbose 'rect: %s="%s"' "$var" "${!var}"
             ;;
        \#)
             set_window_by_id "$OPTARG" windows __id || exit
             var="windows[$__id]"
-            rects[i++]=$var
+            rects[i++]=$var; verbose 'rect: %s="%s"' "$var" "${!var}"
             ;;
         w)
             set_window_interactively windows __id
             var="windows[$__id]"
-            rects[i++]=$var
+            rects[i++]=$var; verbose 'rect: %s="%s"' "$var" "${!var}"
             ;;
         b)
             borders=1
@@ -471,7 +472,7 @@ declare -n ref_rect
 
 for ref_rect in "${rects[@]}"; do
     offsets=$(get_"$mom"_offsets "$ref_rect" "$offsets")
-    debug "get_%s_offsets -> offsets='%s'" "$mom" "$offsets"
+    debug 'get_%s_offsets -> offsets="%s"' "$mom" "$offsets"
 done
 : ${offsets:='0 0 0 0'}
 unset -n ref_rect
