@@ -84,17 +84,6 @@ _quote_cmd_line() {
     printf '\n'
 }
 
-_report_array_by_key() {
-    local -n ref_array=$1
-    printf '%q[%q]=%q\n' "$1" "$2" "${ref_array[$2]}"
-}
-
-debug_array_by_key() {
-    ((verbosity >= 4)) || return 0
-    printf '%s: ' "${logp[debug]}"
-    _report_array_by_key "$@"
-} >&2
-
 for ((i=0; i<${#logl[@]}; ++i)); do
     eval "${logl[i]}() {
         ((verbosity >= $i)) || return 0
