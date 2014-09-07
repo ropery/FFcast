@@ -419,10 +419,8 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
                 IFS=' ,' read -a ids <<< "$OPTARG"
             fi
             for id in "${ids[@]}"; do
-                if [[ $id != +([0-9]) ]]; then
-                    warn "ignored invalid head ID: \'%s'" "$id"
-                elif [[ ! -v heads_all[$id] ]]; then
-                    warn "ignored non-existent head ID: \`%s'" "$id"
+                if [[ ! -v heads_all[$id] ]]; then
+                    warn "ignored invalid head ID: \`%s'" "$id"
                 else
                     heads[$id]=${heads_all[$id]}
                     rects[i++]="heads[$id]"
@@ -492,11 +490,11 @@ unset -v mom
 
 set_region_vars_by_offsets || exit
 
-#---
-# Import predefined sub-commands
-
 # a little optimization
 (($#)) || { run_default_command; exit; }
+
+#---
+# Import predefined sub-commands
 
 for srcdir in "${srcdirs[@]}"; do
     subcmdsrc=$srcdir/subcmd
