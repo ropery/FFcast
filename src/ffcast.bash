@@ -37,7 +37,7 @@ declare -A sub_commands=() sub_cmdfuncs=()
 declare -a rects=() regions=()
 declare -A heads=() windows=() heads_all=()
 declare -- {root_{w,h},rect_{w,h,x,y,X,Y}}=0
-declare -- borders=0 frame=0 frame_extents_support=1 intersection=0
+declare -- borders=0 frame=0 frame_support=1 intersect=0
 
 declare -A fmtmap=(
     ['D']='$DISPLAY'
@@ -201,7 +201,7 @@ set_region_interactively() {
 # $2: variable to assign window ID to
 set_window_interactively() {
     msg '%s' "please click once in target window"
-    ((!frame || frame_extents_support)) || set -- "$1" "$2" -frame
+    ((!frame || frame_support)) || set -- "$1" "$2" -frame
     xwininfo_get_window_by_ref "$@"
 }
 
@@ -265,7 +265,7 @@ xwininfo_get_window_by_ref() {
     local -n ref_id=$2
     export LC_ALL=C
     xwininfo "${@:3}" |
-    awk -v borders="$borders" -v frame="$((frame && frame_extents_support))" '
+    awk -v borders="$borders" -v frame="$((frame && frame_support))" '
     BEGIN { OFS = " " }
     /^xwininfo: Window id: 0x[[:xdigit:]]+ / { _id = $4 }
     /^ *Border width: [[:digit:]]+$/ { _bw = $3 }
@@ -461,11 +461,11 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
             verbose "windows: now including window manager frame"
             if ! LC_ALL=C xprop -root -notype _NET_SUPPORTED |
                 grep -qw _NET_FRAME_EXTENTS; then
-                frame_extents_support=0
+                frame_support=0
                 warn 'no _NET_FRAME_EXTENTS support; using xwininfo -frame'
             fi
             ;;
-        i)  intersection=1;;
+        i)  intersect=1;;
         q)  ((verbosity > 0 && verbosity--)) || :;;
         v)  ((verbosity < ${#logl[@]} - 1 && verbosity++)) || :;;
       '?')  warn "invalid option: \`%s'" "$OPTARG";;
@@ -480,7 +480,7 @@ shift $((OPTIND - 1))
 declare -- mom offsets=
 declare -n ref_rect
 
-((intersection)) && mom=max || mom=min
+((intersect)) && mom=max || mom=min
 
 for ref_rect in "${rects[@]}"; do
     offsets=$(get_"$mom"_offsets "$ref_rect" "$offsets")
