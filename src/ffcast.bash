@@ -159,6 +159,24 @@ printf '%s %s\n' max '>' min '<' | while IFS=' ' read -r mom cmp; do
 done
 unset -v mom cmp
 
+set_region_vars_by_offsets() {
+    offsets=$(get_max_offsets "$offsets" '0 0 0 0')
+    debug "sanitize offsets -> offsets='%s'" "$offsets"
+    IFS=' ' read rect_{x,y,X,Y} <<< "$offsets"
+    ((rect_w = root_w - rect_x - rect_X)) || :
+    ((rect_h = root_h - rect_y - rect_Y)) || :
+    set -- rect_{w,h,x,y,X,Y}
+    debug 'set region variables'
+    while (($#)); do
+        debug '\t%s' "$(declare -p "$1")"
+        shift
+    done
+    if ! ((rect_w > 0 && rect_h > 0)); then
+        error 'invalid region size: %sx%s' "$rect_w" "$rect_h"
+        return 1
+    fi
+}
+
 # $1: a geospec
 # $2: variable to assign offsets to
 set_region_by_geospec() {
@@ -197,14 +215,6 @@ set_region_interactively() {
     printf -v "$1" '%s' "$(xrectsel '%x %y %X %Y')"
 }
 
-# $1: array variable to modify
-# $2: variable to assign window ID to
-set_window_interactively() {
-    msg '%s' "please click once in target window"
-    ((!frame || frame_support)) || set -- "$1" "$2" -frame
-    xwininfo_get_window_by_ref "$@"
-}
-
 # $1: a window ID
 # $2: array variable to modify
 # $3: variable to assign window ID to
@@ -218,43 +228,12 @@ set_window_by_id() {
     xwininfo_get_window_by_ref "$2" "$3" -id "$1"
 }
 
-# stdin: xdpyinfo -ext XINERAMA (preferably sanitized)
-# $1: array variable to assign heads to, i.e. =([id]=offsets ...)
-xdpyinfo_get_heads_by_ref() {
-    local -n ref_heads=$1
-    local IFS
-    while IFS=' ' read -r REPLY; do
-        REPLY=${REPLY#head #}
-        if [[ $REPLY == \
-            +([0-9]):\ +([0-9])x+([0-9])' @ '+([0-9]),+([0-9]) ]]; then
-            IFS=' :x@,'
-            set -- $REPLY
-            set -- "$1" "$4" "$5" "$((root_w -$4 -$2))" "$((root_h -$5 -$3))"
-            IFS=' '
-            ref_heads["$1"]="${*:2}"
-        fi
-    done
-    (($# == 5))
-}
-
-xdpyinfo_list_heads() {
-    LC_ALL=C xdpyinfo -ext XINERAMA |
-    sed -n '
-    /^XINERAMA extension not supported by xdpyinfo/ { p; q1 }
-    /^XINERAMA version/!d
-    :h; n; s/^  \(head #\)/\1/p; th; q'
-}
-
-# stdout: wxh
-# $@: passed to xwininfo
-xwininfo_get_size() {
-    LC_ALL=C xwininfo "$@" |
-    sed -n '
-    $q1
-    /^  Width: \([0-9]\+\)$/!d
-    s//\1/; h; n
-    /^  Height: \([0-9]\+\)$/!q1
-    s//\1/; H; x; s/\n/x/; p; q'
+# $1: array variable to modify
+# $2: variable to assign window ID to
+set_window_interactively() {
+    msg '%s' "please click once in target window"
+    ((!frame || frame_support)) || set -- "$1" "$2" -frame
+    xwininfo_get_window_by_ref "$@"
 }
 
 # $1: array variable to modify
@@ -304,6 +283,45 @@ xwininfo_get_window_by_ref() {
     }
 }
 
+# stdout: wxh
+# $@: passed to xwininfo
+xwininfo_get_size() {
+    LC_ALL=C xwininfo "$@" |
+    sed -n '
+    $q1
+    /^  Width: \([0-9]\+\)$/!d
+    s//\1/; h; n
+    /^  Height: \([0-9]\+\)$/!q1
+    s//\1/; H; x; s/\n/x/; p; q'
+}
+
+# stdin: xdpyinfo -ext XINERAMA (preferably sanitized)
+# $1: array variable to assign heads to, i.e. =([id]=offsets ...)
+xdpyinfo_get_heads_by_ref() {
+    local -n ref_heads=$1
+    local IFS
+    while IFS=' ' read -r REPLY; do
+        REPLY=${REPLY#head #}
+        if [[ $REPLY == \
+            +([0-9]):\ +([0-9])x+([0-9])' @ '+([0-9]),+([0-9]) ]]; then
+            IFS=' :x@,'
+            set -- $REPLY
+            set -- "$1" "$4" "$5" "$((root_w -$4 -$2))" "$((root_h -$5 -$3))"
+            IFS=' '
+            ref_heads["$1"]="${*:2}"
+        fi
+    done
+    (($# == 5))
+}
+
+xdpyinfo_list_heads() {
+    LC_ALL=C xdpyinfo -ext XINERAMA |
+    sed -n '
+    /^XINERAMA extension not supported by xdpyinfo/ { p; q1 }
+    /^XINERAMA version/!d
+    :h; n; s/^  \(head #\)/\1/p; th; q'
+}
+
 run_default_command() {
     printf '%dx%d+%d+%d\n' "$rect_w" "$rect_h" "$rect_x" "$rect_y"
 }
@@ -340,24 +358,6 @@ run_subcmd_or_command() {
         fi
     else
         run_external_command "$@" || exit
-    fi
-}
-
-set_region_vars_by_offsets() {
-    offsets=$(get_max_offsets "$offsets" '0 0 0 0')
-    debug "sanitize offsets -> offsets='%s'" "$offsets"
-    IFS=' ' read rect_{x,y,X,Y} <<< "$offsets"
-    ((rect_w = root_w - rect_x - rect_X)) || :
-    ((rect_h = root_h - rect_y - rect_Y)) || :
-    set -- rect_{w,h,x,y,X,Y}
-    debug 'set region variables'
-    while (($#)); do
-        debug '\t%s' "$(declare -p "$1")"
-        shift
-    done
-    if ! ((rect_w > 0 && rect_h > 0)); then
-        error 'invalid region size: %sx%s' "$rect_w" "$rect_h"
-        return 1
     fi
 }
 
