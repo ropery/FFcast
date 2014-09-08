@@ -495,15 +495,8 @@ for srcdir in "${srcdirs[@]}"; do
 done
 unset -v srcdir subcmdsrc
 
-# make sure these are not defined as sub-commands
-for cmd in builtin command; do
-    unset -f $cmd
-    if [[ -v sub_commands[$cmd] ]]; then
-        unset -v sub_commands[$cmd]
-        warn 'unset sub-command %s' "$cmd"
-    fi
-done
-unset -v cmd
+# make sure these are not defined as functions
+unset -f builtin command
 
 #---
 # Execute
