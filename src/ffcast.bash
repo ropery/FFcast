@@ -105,8 +105,7 @@ done
 # $2: array variable to assign substitution results to
 # ${@:3} are strings to be substituted
 substitute_format_strings() {
-    local -n ref_fmtmap=$1
-    local -n ref_strarr=$2
+    local -n ref_fmtmap=$1 ref_strarr=$2
     shift 2
     ref_strarr=()
     while (($#)); do
@@ -229,9 +228,8 @@ set_window_interactively() {
 # $2: variable to assign window ID to
 # ${@:3} are passed to xwininfo
 xwininfo_get_window_by_ref() {
-    local -n ref_windows=$1
-    local -n ref_id=$2
-    export LC_ALL=C
+    local -n ref_windows=$1 ref_id=$2
+    local -x LC_ALL=C
     xwininfo "${@:3}" |
     awk -v borders="$borders" -v frame="$((frame && frame_support))" '
     BEGIN { OFS = " " }
@@ -265,17 +263,16 @@ xwininfo_get_window_by_ref() {
         print _ol, _ot, _or, _ob
     }' |
     {
-        read -r
-        ref_id=$REPLY
-        read -r
-        ref_windows["$ref_id"]=$REPLY
+        read -r; ref_id=$REPLY
+        read -r; ref_windows["$ref_id"]=$REPLY
     }
 }
 
 # stdout: wxh
 # $@: passed to xwininfo
 xwininfo_get_size() {
-    LC_ALL=C xwininfo "$@" |
+    local -x LC_ALL=C
+    xwininfo "$@" |
     sed -n '
     $q1
     /^  Width: \([0-9]\+\)$/!d
@@ -304,7 +301,8 @@ xdpyinfo_get_heads_by_ref() {
 }
 
 xdpyinfo_list_heads() {
-    LC_ALL=C xdpyinfo -ext XINERAMA |
+    local -x LC_ALL=C
+    xdpyinfo -ext XINERAMA |
     sed -n '
     /^XINERAMA extension not supported by xdpyinfo/ { p; q1 }
     /^XINERAMA version/!d
