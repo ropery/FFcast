@@ -135,7 +135,7 @@ printf '%s %s\n' max '>' min '<' | while IFS=' ' read -r mom cmp; do
         shift || return 1
         local {,_}{l,t,r,b}
         IFS=" " read l t r b <<< "$offsets"
-        for offsets in "$@"; do
+        for offsets; do
             [[ -n $offsets ]] || continue
             IFS=" " read _{l,t,r,b} <<< "$offsets"
             for o in l t r b; do
