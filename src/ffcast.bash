@@ -220,8 +220,7 @@ set_window_by_id() {
 # $2: variable to assign window ID to
 set_window_interactively() {
     msg '%s' "please click once in target window"
-    ((!frame || frame_support)) || set -- "$1" "$2" -frame
-    xwininfo_get_window_by_ref "$@"
+    xwininfo_get_window_by_ref "$1" "$2"
 }
 
 # $1: array variable to modify
@@ -230,7 +229,7 @@ set_window_interactively() {
 xwininfo_get_window_by_ref() {
     local -n ref_windows=$1 ref_id=$2
     local -x LC_ALL=C
-    xwininfo "${@:3}" |
+    xwininfo "${@:3}" `((!frame || frame_support)) || printf -- -frame` |
     awk -v borders="$borders" -v frame="$((frame && frame_support))" '
     BEGIN { OFS = " " }
     /^xwininfo: Window id: 0x[[:xdigit:]]+ / { _id = $4 }
