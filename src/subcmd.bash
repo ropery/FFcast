@@ -118,14 +118,15 @@ subcmd_png() {
 sub_commands['rec']='record a screencast'
 sub_cmdfuncs['rec']=subcmd_rec
 subcmd_rec() {
-    : 'usage: rec [-m <n>] [filename.ext]'
+    : 'usage: rec [-m <n>] [-r <fps>] [filename.ext]'
     local -a __args
     local -a v=(fatal error info verbose debug)  # ffmpeg loglevels
-    local m=1 opt
+    local m=1 r=25 opt
     OPTIND=1
-    while getopts ':m:' opt; do
+    while getopts ':m:r:' opt; do
         case $opt in
             m) m=$OPTARG;;
+            r) r=$OPTARG;;
         esac
     done
     shift $((OPTIND - 1))
@@ -134,7 +135,7 @@ subcmd_rec() {
     msg 'saving to file: %s' "${__args[-1]}"  # unreliable
     verbose_run command -- \
         ffmpeg -loglevel "${v[verbosity]}" \
-        -f x11grab -show_region 1 -framerate 25 \
+        -f x11grab -show_region 1 -framerate "$r" \
         -video_size "${rect_w}x$rect_h" -i "$DISPLAY+$rect_x,$rect_y" \
         -filter:v crop="iw-mod(iw\\,$m):ih-mod(ih\\,$m)" "${__args[@]}"
 }
