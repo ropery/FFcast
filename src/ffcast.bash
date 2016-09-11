@@ -130,7 +130,7 @@ substitute_format_strings() {
 }
 
 printf '%s %s\n' max '>' min '<' | while IFS=' ' read -r mom cmp; do
-    eval 'get_'$mom'_offsets() {
+    eval 'get_'${mom}'_offsets() {
         local offsets=$1 o
         shift || return 1
         local {,_}{l,t,r,b}
@@ -288,7 +288,7 @@ xdpyinfo_get_heads_by_ref() {
     while IFS=' ' read -r REPLY; do
         REPLY=${REPLY#head #}
         if [[ $REPLY == \
-            +([0-9]):\ +([0-9])x+([0-9])' @ '+([0-9]),+([0-9]) ]]; then
+            +([0-9]):\ +([0-9])x+([0-9])\ @\ +([0-9]),+([0-9]) ]]; then
             IFS=' :x@,'
             set -- $REPLY
             set -- "$1" "$4" "$5" "$((root_w -$4 -$2))" "$((root_h -$5 -$3))"
