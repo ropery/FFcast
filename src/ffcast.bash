@@ -168,7 +168,9 @@ set_region_vars_by_offsets() {
 # $1: a geospec
 # $2: variable to assign offsets to
 set_region_by_geospec() {
-    printf -v "$2" '%s' "$(get_region_by_geospec "$1")"
+    set -- "$(get_region_by_geospec "$1")" "$2"
+    [[ -n $1 ]] || return
+    printf -v "$2" '%s' "$1"
 }
 
 # stdout: offsets
