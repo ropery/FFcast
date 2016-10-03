@@ -332,7 +332,7 @@ run_subcmd_or_command() {
     local sub_cmd=$1
     if [[ -z $sub_cmd ]]; then
         run_default_command
-        exit
+        return
     fi
     if [[ -v sub_commands[$sub_cmd] ]]; then
         shift
@@ -342,10 +342,10 @@ run_subcmd_or_command() {
         else
             error "sub-command '%s' function '%s' not found" "$sub_cmd" \
                 "$sub_cmd_func"
-            exit 1
+            return 1
         fi
     else
-        run_external_command "$@" || exit
+        run_external_command "$@"
     fi
 }
 

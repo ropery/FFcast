@@ -96,7 +96,7 @@ subcmd_pad() {
     let 'rect_x -= l' 'rect_y -= t' 'rect_X -= r' 'rect_Y -= b' || :
     verbose 'padding: top=%d right=%d bottom=%d left=%d' "$t" "$r" "$b" "$l"
     offsets="$rect_x $rect_y $rect_X $rect_Y"
-    set_region_vars_by_offsets || exit
+    set_region_vars_by_offsets || return
     run_subcmd_or_command "$@"
 }
 
