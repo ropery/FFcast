@@ -31,7 +31,7 @@ readonly -a srcdirs=(
     '@sysconfdir@/@PACKAGE@'
     "${XDG_CONFIG_HOME:-$HOME/.config}"/'@PACKAGE@')
 readonly -a logl=(error warn msg verbose debug)
-declare -A 'logp=([warn]="warning" [msg]=":")'
+declare -A logp=([warn]='warning' [msg]=':')
 declare -- verbosity=2
 declare -A sub_commands=() sub_cmdfuncs=()
 declare -a rects=() regions=()
