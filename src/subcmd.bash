@@ -110,7 +110,8 @@ subcmd_png() {
         "$rect_w" "$rect_h")"}
     msg 'saving to file: %s' "${__args[-1]}"  # unreliable
     verbose_run command -- \
-        ffmpeg -loglevel error -f x11grab -draw_mouse 0 -show_region 1 \
+        ffmpeg -loglevel error \
+        -f x11grab -draw_mouse 0 -show_region $((!!verbosity)) \
         -video_size "${rect_w}x$rect_h" -i "$DISPLAY+$rect_x,$rect_y" \
         -f image2 -codec:v png -frames:v 1 "${__args[@]}"
 }
