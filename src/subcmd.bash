@@ -75,7 +75,7 @@ subcmd_each() {
     done
 }
 
-sub_commands['pad']='Add CSS-style padding to region'
+sub_commands['pad']='add CSS-style padding to region'
 sub_cmdfuncs['pad']=subcmd_pad
 subcmd_pad() {
     : 'usage: pad <padding> [sub-command]'
