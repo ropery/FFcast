@@ -75,6 +75,14 @@ subcmd_each() {
     done
 }
 
+sub_commands['lag']='delay execution of a sub-command'
+sub_cmdfuncs['lag']=subcmd_lag
+subcmd_lag() {
+    : 'usage: lag <duration> [sub-command]'
+    sleep "$1" && shift || return
+    run_subcmd_or_command "$@"
+}
+
 sub_commands['pad']='add CSS-style padding to region'
 sub_cmdfuncs['pad']=subcmd_pad
 subcmd_pad() {
