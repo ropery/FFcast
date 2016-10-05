@@ -217,6 +217,11 @@ explicitly pad the region with the size of the frame:
 
     ffcast -w pad '20 2 2' png screenshot-%s.png
 
+Roughly select a region, take a screenshot sans the edges, using either of:
+
+    ffcast -s png - | convert - -trim screenshot.png
+    ffcast -s import -window root -crop %g -trim screenshot-%s.png
+
 To take a screenshot of the currently focused window quickly, bind the
 following to a keyboard shortcut:
 
