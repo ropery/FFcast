@@ -149,4 +149,19 @@ subcmd_rec() {
         -filter:v crop="iw-mod(iw\\,$m):ih-mod(ih\\,$m)" "${__args[@]}"
 }
 
+sub_commands['trim']='remove edges from region'
+sub_cmdfuncs['trim']=subcmd_trim
+subcmd_trim() {
+    : 'usage: trim [sub-command]'
+    local w h l t r b
+    verbosity=0 subcmd_png - | command convert - -format '%@\n' info:- |
+    IFS='x+' read -r w h l t
+    let 'r = rect_w - w - l' 'b = rect_h - h - t' || :
+    let 'rect_x += l' 'rect_y += t' 'rect_X += r' 'rect_Y += b' || :
+    verbose 'trim: top=%d right=%d bottom=%d left=%d' "$t" "$r" "$b" "$l"
+    offsets="$rect_x $rect_y $rect_X $rect_Y"
+    set_region_vars_by_offsets || return
+    run_subcmd_or_command "$@"
+}
+
 # vim:ts=4:sw=4:et:cc=80:

@@ -26,6 +26,7 @@ Requirements
 
 * Bash 4.3+
 * FFmpeg   - for some sub-commands (`png`, `rec`)
+* ImageMagick - for the `trim` sub-command
 * xdpyinfo - for the `-x` option
 * xprop    - for the `-f` option
 * https://github.com/lolilolicon/xrectsel.git[xrectsel] - for the `-s` option
