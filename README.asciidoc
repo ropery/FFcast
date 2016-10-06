@@ -1,68 +1,64 @@
 FFcast
 ======
 
-NOTE: Since FFcast 2.2.0, https://github.com/lolilolicon/xrectsel.git[xrectsel]
-has become a separate project. Packagers should from now on package xrectsel
-separately, and make FFcast depend on it.
+FFcast deals with rectangles on screens. Mostly, it selects rectangles. Like
+most boring jobs, there are many ways to do it: free selection, selection by
+window, screen number, numeric geometry, or by edge detection. Simple
+arithmetic operations allow simple combinations and adjustments.
 
-NOTE: Users of FFcast 1.0 will have to update their command lines. See
-https://github.com/lolilolicon/FFcast/issues/8#issuecomment-52167381[issue #8].
+Now FFcast knows all about these rectangles, but what to do with them? Well,
+like most useless things, there are many ways to use them: in practice,
+screenshots and screencasts are obviously popular options; in general, the
+geometry can be utilized by any application that understands X geometry,
+including window managers, dunst, FFmpeg, gifview, ImageMagick, mousetweaks,
+mpv, Nautilus, sxiv, xclock, xev, xdotool, zenity, to randomly name a few.
 
-FFcast helps the user interactively select a screen region and hands over the
-geometry to an external command, such as FFmpeg, to record a screencast, or
-take a screenshot, among other things.
-
-FFcast is a historical name. To say "FFcast wraps around FFmpeg" is as good as
-saying "XBMC runs on Xbox". Sure, FFmpeg is a fine thing to wrap around, but
-FFcast can wrap around a lot of things.
-
-FFcast really is a "handy" or "human friendly" interface for anything involving
-selecting a box on the screen. In the same spirit, it tries to provide handy
-terse commands for common tasks, and allows users to define their own commands,
-in a straight-forward manner, to tailor to their own needs.
+FFcast provides several short commands for common tasks, just to please its
+users, but hardly ever satisfies anyone. Like most unhelpful tools, it
+encourages its users to roll their own cigarettes.
 
 Requirements
 ------------
 
-* Bash 4.3+
-* FFmpeg   - for some sub-commands (`png`, `rec`)
-* ImageMagick - for the `trim` sub-command
-* xdpyinfo - for the `-x` option
-* xprop    - for the `-f` option
-* https://github.com/lolilolicon/xrectsel.git[xrectsel] - for the `-s` option
-* xwininfo - for the `-w` option
+Bash 4.3+,
+FFmpeg (`png` `rec`),
+ImageMagick (`trim`),
+xdpyinfo (`-x`),
+xprop (`-f`),
+https://github.com/lolilolicon/xrectsel.git[xrectsel] (`-s`),
+xwininfo (`-w`).
 
 Get the Source
 --------------
 
-The source code is hosted at GitHub:
-either https://github.com/lolilolicon/FFcast.git[git clone] or
+Either https://github.com/lolilolicon/FFcast.git[git clone] or
 https://github.com/lolilolicon/FFcast/releases[get releases].
 
 Installation
 ------------
 
+Arch Linux package for users and perusers alike:
+https://aur.archlinux.org/packages/ffcast/[AUR/ffcast].
+
 To build and install from source,
 
-  ./bootstrap  # required if ./configure is not present
+  ./bootstrap  # generates ./configure
   ./configure --prefix /usr --libexecdir /usr/lib --sysconfdir /etc
   make
   make DESTDIR="$dir" install  # $dir must be an absolute path
 
-Note if you build from Git source, you can pull in xrectsel as a submodule,
+To get xrectsel along with FFcast, pull in the submodule,
 
   git clone --recursive https://github.com/lolilolicon/FFcast.git
-  cd FFcast && ./bootstrap && ./configure --enable-xrectsel ... && make ...
 
-This will allow you to build and install xrectsel along with FFcast.
-
-Arch Linux users can simply install
-https://aur.archlinux.org/packages/ffcast/[AUR/ffcast].
+Then build and install as described above, but passing an additional
+`--enable-xrectsel` to `./configure`.
 
 Usage
 -----
 
 See link:doc/ffcast.1.pod[+ffcast(1)+].
+Perhaps start with link:doc/ffcast.1.pod#examples[EXAMPLES].
 
 ////
 vim:ts=2:sw=2:syntax=asciidoc:et:spell:spelllang=en_us:cc=80:
