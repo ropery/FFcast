@@ -28,12 +28,6 @@ xprop (`-f`),
 https://github.com/lolilolicon/xrectsel.git[xrectsel] (`-s`),
 xwininfo (`-w`).
 
-Get the Source
---------------
-
-Either https://github.com/lolilolicon/FFcast.git[git clone] or
-https://github.com/lolilolicon/FFcast/releases[get releases].
-
 Installation
 ------------
 
