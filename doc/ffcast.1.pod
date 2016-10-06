@@ -249,6 +249,19 @@ several format strings:
 
     ffcast -x 0,1,2 each png %t_%i-%s.png
 
+Similarly, in a tiling WM, take a screenshot of each xterm window in view:
+
+    ffcast $(xdotool search --onlyvisible --class '^XTerm$'|sed i-#) each png
+
+To do the same thing, but in parallel, and with padding:
+
+    xdotool search --onlyvisible --class '^XTerm$' |
+    xargs -P0 -I+ ffcast -# + -qq pad '20 2 2' png -y /tmp/+.png
+
+Resize a floating window to the same size as another, by two mouse clicks:
+
+    ffcast -w xdotool selectwindow windowsize %w %h windowactivate
+
 =head1 SEE ALSO
 
 B<ffmpeg(1)>, B<X(7)>
