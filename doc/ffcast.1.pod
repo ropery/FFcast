@@ -221,10 +221,10 @@ Roughly select a region, take a screenshot sans the edges:
 
     ffcast -s trim png screenshot-%s.png
 
-To take a screenshot of the currently focused window quickly, bind the
-following to a keyboard shortcut:
+To take a screenshot of the active window quickly, bind the following to a
+keyboard shortcut:
 
-    ffcast -q -# "$(xdotool getwindowfocus)" png /tmp/"$(date +%F\ %T)".png
+    ffcast -q -# "$(xdotool getactivewindow)" png /tmp/"$(date +%F\ %T)".png
 
 Use the sub-command B<rec> to record a fullscreen screencast on display C<:1>.
 The B<rec> sub-command accepts the B<-m> option, which crops the video so
@@ -232,20 +232,15 @@ both its width and height are divisible by the given number:
 
     DISPLAY=:1 ffcast -vv rec -m 4 screencast.mkv
 
-Record a screencast of all three windows of B<GIMP>. This works because all
-selections are by default combined by union. Note format strings are always
-substituted for external commands:
+Record a screencast of all three windows of B<GIMP> combined. This works
+because all selections are by default combined by union. Note format strings
+are always substituted for external commands:
 
     ffcast -www ffmpeg -f x11grab -show_region 1 -s %s -i %D+%c gimp.mp4
 
-Resize a window to the same size as another, by two mouse clicks:
-
-    ffcast -w xdotool selectwindow windowsize %w %h windowfocus
-
 Take a screenshot of two windows combined, excluding anything invisible on
-head 0, using either of:
+head 0:
 
-    ffcast -i -x 0 -g "$(ffcast -ww)" png
     ffcast -ww ffcast -i -x 0 -g %g png
 
 Take three individual screenshots of heads 0, 1, 2, one by one. The B<each>
