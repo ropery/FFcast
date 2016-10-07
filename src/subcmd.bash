@@ -118,9 +118,10 @@ subcmd_png() {
         "$rect_w" "$rect_h")"}
     msg 'saving to file: %s' "${__args[-1]}"  # unreliable
     verbose_run command -- \
-        ffmpeg -loglevel error \
-        -f x11grab -draw_mouse 0 -show_region $((!!verbosity)) \
-        -video_size "${rect_w}x$rect_h" -i "$DISPLAY+$rect_x,$rect_y" \
+        ffmpeg -loglevel error -nostdin \
+        -f x11grab -draw_mouse 0 -show_region 0 \
+        -video_size "$root_w"x"$root_h" -i "$DISPLAY" \
+        -filter:v crop="$rect_w:$rect_h:$rect_x:$rect_y" \
         -f image2 -codec:v png -frames:v 1 "${__args[@]}"
 }
 
@@ -161,8 +162,7 @@ subcmd_trim() {
         esac
     done
     shift $((OPTIND - 1))
-    verbosity=0 subcmd_png - |
-    command convert - ${f:+-fuzz "$f"} -format '%@\n' info:- |
+    subcmd_png - | command convert - ${f:+-fuzz "$f"} -format '%@\n' info:- |
     IFS='x+' read -r w h l t
     let 'r = rect_w - w - l' 'b = rect_h - h - t' || :
     subcmd_pad "-$t -$r -$b -$l" "$@"
