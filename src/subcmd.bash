@@ -152,9 +152,17 @@ subcmd_rec() {
 sub_commands['trim']='remove edges from region'
 sub_cmdfuncs['trim']=subcmd_trim
 subcmd_trim() {
-    : 'usage: trim [sub-command]'
-    local w h l t r b
-    verbosity=0 subcmd_png - | command convert - -format '%@\n' info:- |
+    : 'usage: trim [-f <n[%]>] [sub-command]'
+    local w h l t r b f opt
+    OPTIND=1
+    while getopts ':f:' opt; do
+        case $opt in
+            f) f=$OPTARG;;
+        esac
+    done
+    shift $((OPTIND - 1))
+    verbosity=0 subcmd_png - |
+    command convert - ${f:+-fuzz "$f"} -format '%@\n' info:- |
     IFS='x+' read -r w h l t
     let 'r = rect_w - w - l' 'b = rect_h - h - t' || :
     subcmd_pad "-$t -$r -$b -$l" "$@"
