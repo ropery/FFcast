@@ -118,7 +118,7 @@ subcmd_png() {
         "$rect_w" "$rect_h")"}
     msg 'saving to file: %s' "${__args[-1]}"  # unreliable
     verbose_run command -- \
-        ffmpeg -loglevel error \
+        ffmpeg -loglevel error -nostdin \
         -f x11grab -draw_mouse 0 -show_region $((!!verbosity)) \
         -video_size "${rect_w}x$rect_h" -i "$DISPLAY+$rect_x,$rect_y" \
         -f image2 -codec:v png -frames:v 1 "${__args[@]}"
@@ -161,7 +161,8 @@ subcmd_trim() {
         esac
     done
     shift $((OPTIND - 1))
-    verbosity=0 subcmd_png - |
+    command import -window root \
+        -crop "${rect_w}x$rect_h+$rect_x+$rect_y" +repage png:- |
     command convert - ${f:+-fuzz "$f"} -format '%@\n' info:- |
     IFS='x+' read -r w h l t
     let 'r = rect_w - w - l' 'b = rect_h - h - t' || :
