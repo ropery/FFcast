@@ -10,12 +10,31 @@ Now FFcast knows all about these rectangles, but what to do with them? Well,
 like most useless things, there are many ways to use them: in practice,
 screenshots and screencasts are obviously popular options; in general, the
 geometry can be utilized by any application that understands X geometry,
-including window managers, dunst, FFmpeg, gifview, ImageMagick, mousetweaks,
-mpv, Nautilus, sxiv, xclock, xev, xdotool, zenity, to randomly name a few.
+including window managers, xorg-apps (xclock, xev),
+https://git.gnome.org/browse/byzanz[byzanz-record],
+http://www.knopwob.org/dunst/[dunst],
+https://github.com/robm/dzen[dzen2],
+https://ffmpeg.org[FFmpeg],
+http://www.lcdf.org/gifsicle/[gifview],
+https://www.imagemagick.org[ImageMagick],
+https://github.com/naelstrof/maim[maim],
+https://wiki.gnome.org/Projects/Mousetweaks[mousetweaks],
+https://mpv.io[mpv],
+https://wiki.gnome.org/Apps/Nautilus[Nautilus],
+https://github.com/wavexx/screenkey[screenkey],
+https://github.com/muennich/sxiv[sxiv],
+http://www.semicomplete.com/projects/xdotool/[xdotool],
+https://github.com/KeyboardFire/xscast[xscast],
+ftp://ftp.ac-grenoble.fr/ge/Xutils/[xsnap],
+https://git.gnome.org/browse/zenity[zenity],
+to randomly name a few.
 
 FFcast provides several short commands for common tasks, just to please its
 users, but hardly ever satisfies anyone. Like most unhelpful tools, it
 encourages its users to roll their own cigarettes.
+
+Anyway, here's wonder...ful
+https://github.com/lolilolicon/FFcast/wiki/Demos[demos].
 
 Requirements
 ------------
