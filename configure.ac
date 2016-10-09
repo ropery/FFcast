@@ -1,4 +1,4 @@
-AC_INIT([FFcast], [2.4.5], [https://github.com/lolilolicon/FFcast/issues],
+AC_INIT([FFcast], [2.4.6], [https://github.com/lolilolicon/FFcast/issues],
         [ffcast], [https://github.com/lolilolicon/FFcast])
 
 AC_CONFIG_AUX_DIR([build-aux])
