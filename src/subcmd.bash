@@ -144,7 +144,7 @@ subcmd_rec() {
     : ${__args[0]="$(printf '%s-%(%s)T.mkv' screencast -1)"}
     msg 'saving to file: %s' "${__args[-1]}"  # unreliable
     verbose_run command -- \
-        ffmpeg -loglevel "${v[verbosity]}" \
+        ffmpeg -hide_banner -loglevel "${v[verbosity]}" \
         -f x11grab -show_region 1 -framerate "$r" \
         -video_size "${rect_w}x$rect_h" -i "$DISPLAY+$rect_x,$rect_y" \
         -filter:v crop="iw-mod(iw\\,$m):ih-mod(ih\\,$m)" "${__args[@]}"
