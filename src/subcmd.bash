@@ -162,7 +162,8 @@ subcmd_trim() {
         esac
     done
     shift $((OPTIND - 1))
-    subcmd_png - | command convert - ${f:+-fuzz "$f"} -format '%@\n' info:- |
+    verbosity=0 subcmd_png - |
+    command convert - ${f:+-fuzz "$f"} -format '%@\n' info:- |
     IFS='x+' read -r w h l t
     let 'r = rect_w - w - l' 'b = rect_h - h - t' || :
     subcmd_pad "-$t -$r -$b -$l" "$@"
