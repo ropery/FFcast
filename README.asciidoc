@@ -53,6 +53,9 @@ Installation
 Arch Linux package for users and perusers alike:
 https://aur.archlinux.org/packages/ffcast/[AUR/ffcast].
 
+Gentoo package:
+https://packages.gentoo.org/packages/media-video/ffcast[media-video/ffcast].
+
 To build and install from source,
 
   ./bootstrap  # generates ./configure
