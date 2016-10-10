@@ -166,7 +166,7 @@ subcmd_trim() {
     command convert - ${f:+-fuzz "$f"} -format '%@\n' info:- |
     IFS='x+' read -r w h l t
     let 'r = rect_w - w - l' 'b = rect_h - h - t' || :
-    subcmd_pad "-$t -$r -$b -$l" "$@"
+    subcmd_pad "-($t) -($r) -($b) -($l)" "$@"
 }
 
 # vim:ts=4:sw=4:et:cc=80:
