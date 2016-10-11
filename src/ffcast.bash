@@ -159,7 +159,7 @@ set_region_vars_by_offsets() {
         debug '\t%s' "$(declare -p "$1")"
         shift
     done
-    if ! ((rect_w > 0 && rect_h > 0)); then
+    if ((rect_w < 0 || rect_h < 0)); then
         error 'invalid region size: %sx%s' "$rect_w" "$rect_h"
         return 1
     fi
