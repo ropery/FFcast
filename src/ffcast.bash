@@ -202,7 +202,7 @@ get_region_by_geospec() {
 # $1: variable to assign offsets to
 set_region_interactively() {
     msg '%s' "please select a region using mouse"
-    printf -v "$1" '%s' "$(xrectsel '%x %y %X %Y')"
+    xrectsel '%x %y %X %Y'$'\n' | read -r && printf -v "$1" '%s' "$REPLY"
 }
 
 # $1: a window ID
@@ -426,7 +426,7 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
             ;;
         s)
             var="regions[${#regions[@]}]"
-            set_region_interactively "$var"
+            set_region_interactively "$var" || exit
             rects[i++]=$var; verbose 'rect: %s="%s"' "$var" "${!var}"
             ;;
        \#)
