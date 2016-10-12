@@ -380,7 +380,7 @@ EOF
   exit "${1:-0}"
 }
 
-xwininfo_get_size -root | IFS=x read root_{w,h} || usage 1
+xwininfo_get_size -root | IFS=x read root_{w,h} || exit
 
 declare -- i=0 id= opt= var= __id
 declare -a ids
