@@ -210,9 +210,8 @@ set_region_interactively() {
 # $3: variable to assign window ID to
 set_window_by_id() {
     # Unlike xprop, xwininfo simply ignores an invalid -id argument
-    if [[ $1 != @(+([0-9])|0x+([[:xdigit:]])) ]] ||
-        [[ $(printf '%d' "$1") == 0 ]]; then
-        error 'invalid window id: %s' "$1"
+    if [[ $(printf '%d' "$1" 2>/dev/null) == 0 ]]; then
+        error "invalid window ID: \`%s'" "$1"
         return 1
     fi
     xwininfo_get_window_by_ref "$2" "$3" -id "$1"
@@ -408,7 +407,8 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
             fi
             for id in "${ids[@]}"; do
                 if [[ ! -v heads_all[$id] ]]; then
-                    warn "ignored invalid head ID: \`%s'" "$id"
+                    error "invalid head ID: \`%s'" "$id"
+                    exit 1
                 else
                     heads[$id]=${heads_all[$id]}
                     var="heads[$id]"
@@ -419,7 +419,8 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
         g)
             var="regions[${#regions[@]}]"
             if ! set_region_by_geospec "$OPTARG" "$var"; then
-                warn "ignored invalid geospec: \`%s'" "$OPTARG"
+                error "invalid geospec: \`%s'" "$OPTARG"
+                exit 1
             else
                 rects[i++]=$var; verbose 'rect: %s="%s"' "$var" "${!var}"
             fi
