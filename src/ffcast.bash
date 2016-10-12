@@ -264,8 +264,8 @@ xwininfo_get_window_by_ref() {
         print _ol, _ot, _or, _ob
     }' |
     {
-        read -r; ref_id=$REPLY
-        read -r; ref_windows["$ref_id"]=$REPLY
+        read -r && ref_id=$REPLY
+        read -r && ref_windows["$ref_id"]=$REPLY
     }
 }
 
@@ -429,7 +429,7 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
             set_region_interactively "$var" || exit
             rects[i++]=$var; verbose 'rect: %s="%s"' "$var" "${!var}"
             ;;
-       \#)
+      '#')
             set_window_by_id "$OPTARG" windows __id || exit
             var="windows[$__id]"
             rects[i++]=$var; verbose 'rect: %s="%s"' "$var" "${!var}"
