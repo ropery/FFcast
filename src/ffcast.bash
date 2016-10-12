@@ -286,7 +286,7 @@ xwininfo_get_size() {
 xdpyinfo_get_heads_by_ref() {
     local -n ref_heads=$1
     local IFS
-    while IFS=' ' read -r REPLY; do
+    while IFS=' ' read -r; do
         REPLY=${REPLY#head #}
         if [[ $REPLY == \
             +([0-9]):\ +([0-9])x+([0-9])\ @\ +([0-9]),+([0-9]) ]]; then

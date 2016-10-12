@@ -87,20 +87,13 @@ sub_commands['pad']='add CSS-style padding to region'
 sub_cmdfuncs['pad']=subcmd_pad
 subcmd_pad() {
     : 'usage: pad <padding> [sub-command]'
+    (($#)) || set -- 0
     local -- t r b l
-    IFS=$' \t,' read -r t r b l <<< "$1"
-    shift || return 0
-    if [[ -z $t ]]; then
-        return
-    elif [[ -z $r ]]; then
-        local -i t=$t r=$t b=$t l=$t
-    elif [[ -z $b ]]; then
-        local -i t=$t r=$r b=$t l=$r
-    elif [[ -z $l ]]; then
-        local -i t=$t r=$r b=$b l=$r
-    else
-        local -i t=$t r=$r b=$b l=$l
-    fi
+    IFS=$' \t,' read -r t r b l <<< "$1" && shift
+    local -i t=$t
+    local -i r=${r:-$t}
+    local -i b=${b:-$t}
+    local -i l=${l:-$r}
     let 'rect_x -= l' 'rect_y -= t' 'rect_X -= r' 'rect_Y -= b' || :
     verbose 'pad: top=%d right=%d bottom=%d left=%d' "$t" "$r" "$b" "$l"
     offsets="$rect_x $rect_y $rect_X $rect_Y"
