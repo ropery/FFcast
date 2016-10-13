@@ -87,11 +87,9 @@ sub_commands['pad']='add CSS-style padding to region'
 sub_cmdfuncs['pad']=subcmd_pad
 subcmd_pad() {
     : 'usage: pad <padding> [sub-command]'
-    (($#)) || { run_default_command; return; }
-    local -a __args
-    substitute_format_strings fmtmap __args "$1"
+    (($#)) || set -- 0
     local -- t r b l
-    IFS=$' \t,' read -r t r b l <<< "${__args[0]}" && shift
+    IFS=$' \t,' read -r t r b l <<< "$1" && shift
     local -i t=$t
     local -i r=${r:-$t}
     local -i b=${b:-$t}
