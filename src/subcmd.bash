@@ -52,7 +52,7 @@ sub_cmdfuncs['%']=run_external_command
 sub_commands['dump']='dump region-related variables in bash code'
 sub_cmdfuncs['dump']=subcmd_dump
 subcmd_dump() {
-    declare -p {root_{w,h},rect_{w,h,x,y,X,Y}} rects heads regions windows
+    declare -p root_{w,h} rect_{w,h,x,y,X,Y} rects heads regions windows
 }
 
 sub_commands['each']='run a sub-command on each selection consecutively'
