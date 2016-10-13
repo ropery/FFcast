@@ -22,7 +22,7 @@ if ((BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] < 3)) ||
     exit 43
 fi >&2
 
-set -e +m -o pipefail
+set -e -f +m -o pipefail
 shopt -s extglob lastpipe
 trap -- 'trap_err $LINENO' ERR
 
@@ -189,7 +189,7 @@ get_region_by_geospec() {
         +([0-9])x+([0-9])\+?(-)+([0-9])\+?(-)+([0-9]))
             IFS='x+'
             set -- $1
-            set -- "$3" "$4" "$((root_w - $3 - $1))" "$((root_h - $4 - $2))"
+            set -- $3 $4 "$((root_w - $3 - $1))" "$((root_h - $4 - $2))"
             ;;
         *)
             return 1
@@ -292,7 +292,7 @@ xdpyinfo_get_heads_by_ref() {
             +([0-9]):\ +([0-9])x+([0-9])\ @\ +([0-9]),+([0-9]) ]]; then
             IFS=' :x@,'
             set -- $REPLY
-            set -- "$1" "$4" "$5" "$((root_w -$4 -$2))" "$((root_h -$5 -$3))"
+            set -- $1 $4 $5 "$((root_w - $4 - $2))" "$((root_h - $5 - $3))"
             IFS=' '
             ref_heads["$1"]="${*:2}"
         fi
