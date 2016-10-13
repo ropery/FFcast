@@ -87,7 +87,8 @@ sub_commands['pad']='add CSS-style padding to region'
 sub_cmdfuncs['pad']=subcmd_pad
 subcmd_pad() {
     : 'usage: pad <padding> [sub-command]'
-    (($#)) || set -- 0
+    (($#)) || { run_default_command; return; }
+    local -i rw=root_w rh=root_h $(printf ' %s%s' {w,h,x,y,X,Y}{=rect_,})
     local -- t r b l
     IFS=$' \t,' read -r t r b l <<< "$1" && shift
     local -i t=$t

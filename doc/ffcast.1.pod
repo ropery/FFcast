@@ -221,6 +221,11 @@ Roughly select a region, take a screenshot sans the edges:
 
     ffcast -s trim png screenshot-%s.png
 
+The B<pad> sub-command allows arithmetic operations on the region geometry
+parameters (C<w>, C<h>, C<x>, C<y>, C<X>, C<Y>, C<rw>, C<rh>):
+
+    ffcast -s trim pad 'w>400?10:5' png
+
 To take a screenshot of the active window quickly, bind the following to a
 keyboard shortcut:
 
