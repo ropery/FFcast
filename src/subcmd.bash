@@ -83,6 +83,17 @@ subcmd_lag() {
     run_subcmd_or_command "$@"
 }
 
+sub_commands['move']='move region by x,y pixels'
+sub_cmdfuncs['move']=subcmd_move
+subcmd_move() {
+    : 'usage: move <x>[,<y>]'
+    (($#)) || { run_default_command; return; }
+    local -- x y
+    IFS=$' \t,' read -r x y <<< "$1" && shift
+    : ${x:=0} ${y:=0}
+    subcmd_pad "-($y) $x $y -($x)" "$@"
+}
+
 sub_commands['pad']='add CSS-style padding to region'
 sub_cmdfuncs['pad']=subcmd_pad
 subcmd_pad() {
