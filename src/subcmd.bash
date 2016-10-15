@@ -68,8 +68,9 @@ subcmd_each() {
         t=${rects[n]%%\[*}; t=${t%s}
         i=${rects[n]#*\[}; i=${i%\]}
         substitute_format_strings fmtmap_each __args "$@"
-        offsets=$ref_rect
-        set_region_vars_by_offsets || continue
+        <<<"$ref_rect" read rect_{x,y,X,Y}
+        rect_w=root_w-rect_x-rect_X
+        rect_h=root_h-rect_y-rect_Y
         run_subcmd_or_command "${__args[@]}"
         unset -n ref_rect
     done
@@ -106,10 +107,10 @@ subcmd_pad() {
     local -i r=${r:-$t}
     local -i b=${b:-$t}
     local -i l=${l:-$r}
-    let 'rect_x -= l' 'rect_y -= t' 'rect_X -= r' 'rect_Y -= b' || :
     verbose 'pad: top=%d right=%d bottom=%d left=%d' "$t" "$r" "$b" "$l"
-    offsets="$rect_x $rect_y $rect_X $rect_Y"
-    set_region_vars_by_offsets || return
+    let 'rect_x -= l, rect_y -= t, rect_X -= r, rect_Y -= b' || :
+    rect_w=root_w-rect_x-rect_X
+    rect_h=root_h-rect_y-rect_Y
     run_subcmd_or_command "$@"
 }
 
@@ -117,6 +118,7 @@ sub_commands['png']='take a screenshot and save it as a PNG image'
 sub_cmdfuncs['png']=subcmd_png
 subcmd_png() {
     : 'usage: png [filename]'
+    ensure_region_is_on_screen; verify_region_size
     local -a __args
     substitute_format_strings fmtmap __args "$@"
     : ${__args[0]="$(printf '%s-%(%s)T_%dx%d.png' screenshot -1 \
@@ -134,6 +136,7 @@ sub_commands['rec']='record a screencast'
 sub_cmdfuncs['rec']=subcmd_rec
 subcmd_rec() {
     : 'usage: rec [-m <n>] [-r <fps>] [filename.ext]'
+    ensure_region_is_on_screen; verify_region_size
     local -a __args
     local -a v=(fatal error info verbose debug)  # ffmpeg loglevels
     local m r opt

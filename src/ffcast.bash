@@ -36,7 +36,7 @@ declare -- verbosity=2
 declare -A sub_commands=() sub_cmdfuncs=()
 declare -a rects=() regions=()
 declare -A heads=() windows=() heads_all=()
-declare -- {root_{w,h},rect_{w,h,x,y,X,Y}}=0
+declare -i {root_{w,h},rect_{w,h,x,y,X,Y}}=0
 declare -- borders=0 frame=0 frame_support=1 intersect=0
 
 declare -A fmtmap=(
@@ -147,18 +147,15 @@ printf '%s %s\n' max '>' min '<' | while IFS=' ' read -r mom cmp; do
 done
 unset -v mom cmp
 
-set_region_vars_by_offsets() {
-    offsets=$(get_max_offsets "$offsets" '0 0 0 0')
-    debug 'sanitize offsets -> offsets="%s"' "$offsets"
-    IFS=' ' read rect_{x,y,X,Y} <<< "$offsets"
-    ((rect_w = root_w - rect_x - rect_X)) || :
-    ((rect_h = root_h - rect_y - rect_Y)) || :
-    set -- rect_{w,h,x,y,X,Y}
-    debug 'set region variables'
-    while (($#)); do
-        debug '\t%s' "$(declare -p "$1")"
-        shift
-    done
+ensure_region_is_on_screen() {
+    get_max_offsets "$rect_x $rect_y $rect_X $rect_Y" '0 0 0 0' |
+    read rect_{x,y,X,Y}
+    rect_w=root_w-rect_x-rect_X
+    rect_h=root_h-rect_y-rect_Y
+    verbose 'made sure region is on screen'
+}
+
+verify_region_size() {
     if ((rect_w < 0 || rect_h < 0)); then
         error 'invalid region size: %sx%s' "$rect_w" "$rect_h"
         return 1
@@ -310,6 +307,7 @@ xdpyinfo_list_heads() {
 }
 
 run_default_command() {
+    verify_region_size
     printf '%dx%d+%d+%d\n' "$rect_w" "$rect_h" "$rect_x" "$rect_y"
 }
 
@@ -469,16 +467,17 @@ declare -- mom offsets=
 declare -n ref_rect
 
 ((intersect)) && mom=max || mom=min
-
 for ref_rect in "${rects[@]}"; do
     offsets=$(get_"$mom"_offsets "$ref_rect" "$offsets")
     debug 'get_%s_offsets -> offsets="%s"' "$mom" "$offsets"
 done
-: ${offsets:='0 0 0 0'}
-unset -n ref_rect
-unset -v mom
 
-set_region_vars_by_offsets || exit
+<<<"$offsets" read rect_{x,y,X,Y}
+rect_w=root_w-rect_x-rect_X
+rect_h=root_h-rect_y-rect_Y
+
+unset -n ref_rect
+unset -v mom offsets
 
 # a little optimization
 (($#)) || { run_default_command; exit; }
