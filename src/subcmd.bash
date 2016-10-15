@@ -76,6 +76,17 @@ subcmd_each() {
     done
 }
 
+sub_commands['abs']='swap corners to make region sizes non-negative'
+sub_cmdfuncs['abs']=subcmd_abs
+subcmd_abs() {
+    : 'usage: abs [sub-command]'
+    let rect_{x,X}+='rect_w<0?rect_w:0' || :
+    let rect_{y,Y}+='rect_h<0?rect_h:0' || :
+    rect_w=${rect_w#-}
+    rect_h=${rect_h#-}
+    run_subcmd_or_command "$@"
+}
+
 sub_commands['lag']='delay execution of a sub-command'
 sub_cmdfuncs['lag']=subcmd_lag
 subcmd_lag() {
