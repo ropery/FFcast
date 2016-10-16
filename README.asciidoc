@@ -50,11 +50,11 @@ xwininfo (`-w`).
 Installation
 ------------
 
-Arch Linux package for users and perusers alike:
-https://aur.archlinux.org/packages/ffcast/[AUR/ffcast].
-
-Gentoo package:
-https://packages.gentoo.org/packages/media-video/ffcast[media-video/ffcast].
+Package available for:
+https://aur.archlinux.org/packages/ffcast[Arch Linux],
+https://packages.gentoo.org/packages/media-video/ffcast[Gentoo],
+https://software.opensuse.org/package/ffcast[openSUSE].
+https://github.com/lolilolicon/FFcast/issues/21[And your distro, too!]
 
 To build and install from source,
 
