@@ -184,6 +184,7 @@ subcmd_trim() {
     shift $((OPTIND - 1))
     verbosity=0 subcmd_png - |
     command convert - ${f:+-fuzz "$f"} -format '%@\n' info:- |
+    tee >(read -r; debug 'trim bounding box: %s' "$REPLY") |
     IFS=x+ read -r rect_{w,h} x y
     rect_x+=x rect_X=root_w-rect_x-rect_w
     rect_y+=y rect_Y=root_h-rect_y-rect_h
