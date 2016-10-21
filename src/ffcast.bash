@@ -371,6 +371,7 @@ Options:
 All options can be repeated, and are processed in order.
 If no region is selected by the user, select fullscreen.
 
+Run \`${0##*/} help\` to list all sub-commands.
 For more details see ffcast(1).
 EOF
   exit "${1:-0}"
