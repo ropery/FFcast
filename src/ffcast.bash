@@ -59,8 +59,8 @@ msg_colors_on() {
     logp[error]=$'\e[1;31merror\e[m'
     logp[warn]=$'\e[1;33mwarning\e[m'
     logp[msg]=$'\e[34m:\e[m'
-    logp[verbose]=$'\e[32mverbose\e[m'
-    logp[debug]=$'\e[36mdebug\e[m'
+    logp[verbose]=$'\e[32m(\e[m'
+    logp[debug]=$'\e[36m+\e[m'
 }
 
 trap_err() {
@@ -333,7 +333,7 @@ run_subcmd_or_command() {
         shift
         local sub_cmd_func=${sub_cmdfuncs[$sub_cmd]:-$sub_cmd}
         if [[ $(type -t "$sub_cmd_func") == function ]]; then
-            verbose_run "$sub_cmd_func" "$@"
+            debug_run "$sub_cmd_func" "$@"
         else
             error "sub-command '%s' function '%s' not found" "$sub_cmd" \
                 "$sub_cmd_func"
@@ -446,7 +446,7 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
             if ! LC_ALL=C xprop -root -notype _NET_SUPPORTED |
                 grep -qw _NET_FRAME_EXTENTS; then
                 frame_support=0
-                warn 'no _NET_FRAME_EXTENTS support; using xwininfo -frame'
+                verbose 'no _NET_FRAME_EXTENTS support; using xwininfo -frame'
             fi
             ;;
         i)  intersect=1;;
@@ -486,7 +486,7 @@ unset -v mom offsets
 for srcdir in "${srcdirs[@]}"; do
     subcmdsrc=$srcdir/subcmd
     if [[ -r $subcmdsrc ]]; then
-        verbose "importing sub-commands from file %s" "$subcmdsrc"
+        debug "importing sub-commands from file %s" "$subcmdsrc"
         . "$subcmdsrc"
     fi
 done
