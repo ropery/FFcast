@@ -37,7 +37,7 @@ declare -A sub_commands=() sub_cmdfuncs=()
 declare -a rects=() regions=()
 declare -A heads=() windows=() heads_all=()
 declare -i {root_{w,h},rect_{w,h,x,y,X,Y}}=0
-declare -- borders=0 frame=0 frame_support=1 intersect=0
+declare -- borders=0 frame=0 frame_support=1 cmp='<'
 
 declare -A fmtmap=(
     ['D']='$DISPLAY'
@@ -128,26 +128,23 @@ substitute_format_strings() {
     done
 }
 
-printf '%s %s\n' max '>' min '<' | while IFS=' ' read -r mom cmp; do
-    eval 'get_'${mom}'_offsets() {
-        local offsets=$1 o
-        shift || return 1
-        local {,_}{l,t,r,b}
-        IFS=" " read l t r b <<< "$offsets"
-        for offsets do
-            [[ -n $offsets ]] || continue
-            IFS=" " read _{l,t,r,b} <<< "$offsets"
-            for o in l t r b; do
-                eval "(((_$o '$cmp' $o) && ($o = _$o))) || :"
-            done
-        done
-        printf "%d %d %d %d\n" "$l" "$t" "$r" "$b"
+maxmin() {
+    awk '
+    BEGIN { nf = 0 }
+    NF {
+      if (nf < NF) nf = NF
+      for (i = 1; i <= NF; ++i)
+        if (a[i] == "" || $i '"$1"' a[i]) a[i] = $i
+    }
+    END {
+      for (i = 1; i <= nf; ++i)
+        $i = a[i]
+      if (NF) print
     }'
-done
-unset -v mom cmp
+}
 
 ensure_region_is_on_screen() {
-    get_max_offsets "$rect_x $rect_y $rect_X $rect_Y" '0 0 0 0' |
+    maxmin '>' <<<$'0 0 0 0\n'"$rect_x $rect_y $rect_X $rect_Y" |
     read rect_{x,y,X,Y}
     rect_w=root_w-rect_x-rect_X
     rect_h=root_h-rect_y-rect_Y
@@ -450,7 +447,7 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
                 verbose 'no _NET_FRAME_EXTENTS support; using xwininfo -frame'
             fi
             ;;
-        i)  intersect=1;;
+        i)  cmp='>';;
         q)  ((verbosity > 0 && verbosity--)) || :;;
         v)  ((verbosity < ${#logl[@]} - 1 && verbosity++)) || :;;
       '?')  warn "invalid option: \`%s'" "$OPTARG";;
@@ -462,21 +459,12 @@ shift $((OPTIND - 1))
 #---
 # Combine all rectangles
 
-declare mom offsets=
-declare -n ref_rect
-
-((intersect)) && mom=max || mom=min
-for ref_rect in "${rects[@]}"; do
-    offsets=$(get_"$mom"_offsets "$ref_rect" "$offsets")
-done
-
-<<<"$offsets" read rect_{x,y,X,Y}
+((!${#rects[@]})) ||
+eval "printf '%s\n'" $(printf ' "${%s}"' "${rects[@]}") | maxmin "$cmp" |
+read rect_{x,y,X,Y}
 rect_w=root_w-rect_x-rect_X
 rect_h=root_h-rect_y-rect_Y
-report_active_rect "rects.$mom"
-
-unset -n ref_rect
-unset -v mom offsets
+report_active_rect "rects.$cmp"
 
 # a little optimization
 (($#)) || { run_default_command; exit; }
