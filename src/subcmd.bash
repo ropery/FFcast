@@ -71,7 +71,7 @@ subcmd_each() {
         <<<"$ref_rect" read rect_{x,y,X,Y}
         rect_w=root_w-rect_x-rect_X
         rect_h=root_h-rect_y-rect_Y
-        report_active_rect "${FUNCNAME[0]#subcmd_}"
+        report_active_rect "$n:${rects[n]}"
         run_subcmd_or_command "${__args[@]}"
         unset -n ref_rect
     done
