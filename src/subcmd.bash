@@ -119,7 +119,7 @@ subcmd_pad() {
     IFS=$' \t,' read -r t r b l <<< "$1" && shift
     local -i t=$t r=${r:-$t} b=${b:-$t} l=${l:-$r}
     debug 'pad: top=%d right=%d bottom=%d left=%d' "$t" "$r" "$b" "$l"
-    let 'rect_x -= l, rect_y -= t, rect_X -= r, rect_Y -= b' || :
+    rect_x+=-l rect_y+=-t rect_X+=-r rect_Y+=-b
     rect_w=root_w-rect_x-rect_X
     rect_h=root_h-rect_y-rect_Y
     report_active_rect "${FUNCNAME[0]#subcmd_}"
