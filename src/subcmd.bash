@@ -117,7 +117,7 @@ subcmd_pad() {
     local -i rw=root_w rh=root_h $(printf ' %s%s' {w,h,x,y,X,Y}{=rect_,})
     local t r b l
     IFS=$' \t,' read -r t r b l <<< "$1" && shift
-    local -i t=$t r=${r:-$t} b=${b:-$t} l=${l:-$r}
+    local -i t=$t r=${r:-$t} b=${b:-$t}; local -i l=${l:-$r}
     debug 'pad: top=%d right=%d bottom=%d left=%d' "$t" "$r" "$b" "$l"
     rect_x+=-l rect_y+=-t rect_X+=-r rect_Y+=-b
     rect_w=root_w-rect_x-rect_X
@@ -187,8 +187,8 @@ subcmd_trim() {
     command convert - ${f:+-fuzz "$f"} -format '%@\n' info:- |
     tee >(read -r; debug 'trim bounding box: %s' "$REPLY") |
     IFS=x+ read -r rect_{w,h} x y
-    rect_x+=x rect_X=root_w-rect_x-rect_w
-    rect_y+=y rect_Y=root_h-rect_y-rect_h
+    rect_x+=x; rect_X=root_w-rect_x-rect_w
+    rect_y+=y; rect_Y=root_h-rect_y-rect_h
     report_active_rect "${FUNCNAME[0]#subcmd_}"
     run_subcmd_or_command "$@"
 }
