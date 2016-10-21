@@ -170,7 +170,8 @@ sub_commands['trim']='remove edges from region'
 sub_cmdfuncs['trim']=subcmd_trim
 subcmd_trim() {
     : 'usage: trim [-f <n[%]>] [sub-command]'
-    local w h l t r b f opt
+    local -i x y
+    local f opt
     OPTIND=1
     while getopts ':f:' opt; do
         case $opt in
@@ -180,9 +181,10 @@ subcmd_trim() {
     shift $((OPTIND - 1))
     verbosity=0 subcmd_png - |
     command convert - ${f:+-fuzz "$f"} -format '%@\n' info:- |
-    IFS='x+' read -r w h l t
-    let 'r = rect_w - w - l' 'b = rect_h - h - t' || :
-    subcmd_pad "-($t) -($r) -($b) -($l)" "$@"
+    IFS=x+ read -r rect_{w,h} x y
+    rect_x+=x rect_X=root_w-rect_x-rect_w
+    rect_y+=y rect_Y=root_h-rect_y-rect_h
+    run_subcmd_or_command "$@"
 }
 
 # vim:ts=4:sw=4:et:cc=80:
