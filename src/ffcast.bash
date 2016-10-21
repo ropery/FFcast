@@ -24,7 +24,7 @@ fi >&2
 
 set -e -f +m -o pipefail
 shopt -s extglob lastpipe
-trap -- 'trap_err $LINENO' ERR
+trap 'trap_err $LINENO' ERR
 
 readonly -a srcdirs=(
     '@pkglibexecdir@'
@@ -56,11 +56,11 @@ declare -A fmtmap=(
 # Functions
 
 msg_colors_on() {
-    logp[error]=$'\e[1;31m''error'$'\e[m'
-    logp[warn]=$'\e[1;33m''warning'$'\e[m'
-    logp[msg]=$'\e[34m'':'$'\e[m'
-    logp[verbose]=$'\e[32m''verbose'$'\e[m'
-    logp[debug]=$'\e[36m''debug'$'\e[m'
+    logp[error]=$'\e[1;31merror\e[m'
+    logp[warn]=$'\e[1;33mwarning\e[m'
+    logp[msg]=$'\e[34m:\e[m'
+    logp[verbose]=$'\e[32mverbose\e[m'
+    logp[debug]=$'\e[36mdebug\e[m'
 }
 
 trap_err() {
@@ -77,8 +77,7 @@ _msg() {
 }
 
 _quote_cmd_line() {
-    printf '%s' "$1"
-    printf '%q' "$2"
+    printf '%s%q' "$1" "$2"
     shift 2
     (($#)) && printf ' %q' "$@"
     printf '\n'
@@ -135,7 +134,7 @@ printf '%s %s\n' max '>' min '<' | while IFS=' ' read -r mom cmp; do
         shift || return 1
         local {,_}{l,t,r,b}
         IFS=" " read l t r b <<< "$offsets"
-        for offsets; do
+        for offsets do
             [[ -n $offsets ]] || continue
             IFS=" " read _{l,t,r,b} <<< "$offsets"
             for o in l t r b; do
@@ -173,33 +172,29 @@ set_region_by_geospec() {
 # stdout: offsets
 # $1: a geospec
 get_region_by_geospec() {
-    local IFS
     # sanitize whitespaces
-    IFS=$' \t'; set -- $1; set -- "$*"
+    local IFS=$' \t'; set -- $1; set -- "$*"
     case $1 in
         # x1,y1 x2,y2
         ?(-)+([0-9])+(\ |,)?(-)+([0-9])+(\ |,)?(-)+([0-9])+(\ |,)?(-)+([0-9]))
-            IFS=' ,'
-            set -- $1
+            IFS=' ,'; set -- $1
             ;;
         # wxh+x+y
         +([0-9])x+([0-9])\+?(-)+([0-9])\+?(-)+([0-9]))
-            IFS='x+'
-            set -- $1
-            set -- $3 $4 "$((root_w - $3 - $1))" "$((root_h - $4 - $2))"
+            IFS=x+; set -- $1
+            IFS=; set -- $3 $4 $((root_w - $3 - $1)) $((root_h - $4 - $2))
             ;;
         *)
             return 1
             ;;
     esac
-    IFS=' '
-    printf '%s' "$*"
+    IFS=' '; printf '%s' "$*"
 }
 
 # $1: variable to assign offsets to
 set_region_interactively() {
     msg '%s' "please select a region using mouse"
-    xrectsel '%x %y %X %Y'$'\n' | read -r && printf -v "$1" '%s' "$REPLY"
+    xrectsel $'%x %y %X %Y\n' | read -r && printf -v "$1" '%s' "$REPLY"
 }
 
 # $1: a window ID
@@ -287,11 +282,9 @@ xdpyinfo_get_heads_by_ref() {
         REPLY=${REPLY#head #}
         if [[ $REPLY == \
             +([0-9]):\ +([0-9])x+([0-9])\ @\ +([0-9]),+([0-9]) ]]; then
-            IFS=' :x@,'
-            set -- $REPLY
-            set -- $1 $4 $5 "$((root_w - $4 - $2))" "$((root_h - $5 - $3))"
-            IFS=' '
-            ref_heads["$1"]="${*:2}"
+            IFS=' :x@,'; set -- $REPLY
+            IFS=; set -- $1 $4 $5 $((root_w - $4 - $2)) $((root_h - $5 - $3))
+            IFS=' '; ref_heads["$1"]="${*:2}"
         fi
     done
     (($# == 5))
@@ -312,7 +305,7 @@ run_default_command() {
 }
 
 run_external_command() {
-    local -- cmd=$1 extcmd
+    local cmd=$1 extcmd
     shift || return 0
     local -a __args
     # always substitute format strings for external commands
@@ -380,7 +373,7 @@ EOF
 
 xwininfo_get_size -root | IFS=x read root_{w,h} || exit
 
-declare -- i=0 id= opt= var= __id
+declare i=0 id= opt= var= __id
 declare -a ids
 OPTIND=1
 while getopts ':#:bfg:hiqsvwx:' opt; do
@@ -463,7 +456,7 @@ shift $((OPTIND - 1))
 #---
 # Combine all rectangles
 
-declare -- mom offsets=
+declare mom offsets=
 declare -n ref_rect
 
 ((intersect)) && mom=max || mom=min

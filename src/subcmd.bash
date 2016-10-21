@@ -62,7 +62,7 @@ subcmd_each() {
     local -A fmtmap_each=(['i']='$i' ['n']='$((n + 1))' ['t']='$t')
     local -a __args
     local -i n
-    local -- i t
+    local i t
     for ((n=0; n<${#rects[@]}; ++n)); do
         local -n ref_rect=${rects[n]}
         t=${rects[n]%%\[*}; t=${t%s}
@@ -100,7 +100,7 @@ sub_cmdfuncs['move']=subcmd_move
 subcmd_move() {
     : 'usage: move <x>[,<y>]'
     (($#)) || { run_default_command; return; }
-    local -- x y
+    local x y
     IFS=$' \t,' read -r x y <<< "$1" && shift
     : ${x:=0} ${y:=0}
     subcmd_pad "-($y) $x $y -($x)" "$@"
@@ -112,12 +112,9 @@ subcmd_pad() {
     : 'usage: pad <padding> [sub-command]'
     (($#)) || { run_default_command; return; }
     local -i rw=root_w rh=root_h $(printf ' %s%s' {w,h,x,y,X,Y}{=rect_,})
-    local -- t r b l
+    local t r b l
     IFS=$' \t,' read -r t r b l <<< "$1" && shift
-    local -i t=$t
-    local -i r=${r:-$t}
-    local -i b=${b:-$t}
-    local -i l=${l:-$r}
+    local -i t=$t r=${r:-$t} b=${b:-$t} l=${l:-$r}
     verbose 'pad: top=%d right=%d bottom=%d left=%d' "$t" "$r" "$b" "$l"
     let 'rect_x -= l, rect_y -= t, rect_X -= r, rect_Y -= b' || :
     rect_w=root_w-rect_x-rect_X
@@ -135,7 +132,7 @@ subcmd_png() {
     : ${__args[0]="$(printf '%s-%(%s)T_%dx%d.png' screenshot -1 \
         "$rect_w" "$rect_h")"}
     msg 'saving to file: %s' "${__args[-1]}"  # unreliable
-    verbose_run command -- \
+    verbose_run command \
         ffmpeg -loglevel error -nostdin \
         -f x11grab -draw_mouse 0 -show_region 0 \
         -video_size "$root_w"x"$root_h" -i "$DISPLAY" \
@@ -162,11 +159,11 @@ subcmd_rec() {
     substitute_format_strings fmtmap __args "$@"
     : ${__args[0]="$(printf '%s-%(%s)T.mkv' screencast -1)"}
     msg 'saving to file: %s' "${__args[-1]}"  # unreliable
-    verbose_run command -- \
+    verbose_run command \
         ffmpeg -hide_banner -loglevel "${v[verbosity]}" \
         -f x11grab -show_region 1 ${r:+-framerate "$r"} \
         -video_size "${rect_w}x$rect_h" -i "$DISPLAY+$rect_x,$rect_y" \
-        ${m:+-filter:v crop="iw-mod(iw\\,$m):ih-mod(ih\\,$m)"} "${__args[@]}"
+        ${m:+-filter:v crop="iw-mod(iw\,$m):ih-mod(ih\,$m)"} "${__args[@]}"
 }
 
 sub_commands['trim']='remove edges from region'
