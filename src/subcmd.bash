@@ -93,7 +93,8 @@ sub_commands['lag']='delay execution of a sub-command'
 sub_cmdfuncs['lag']=subcmd_lag
 subcmd_lag() {
     : 'usage: lag <duration> [sub-command]'
-    debug_run command sleep $1 && shift || return
+    msg 'delay: %s' "$1"
+    command sleep $1 && shift || return
     run_subcmd_or_command "$@"
 }
 
