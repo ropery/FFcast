@@ -71,6 +71,7 @@ subcmd_each() {
         <<<"$ref_rect" read rect_{x,y,X,Y}
         rect_w=root_w-rect_x-rect_X
         rect_h=root_h-rect_y-rect_Y
+        report_active_rect "${FUNCNAME[0]#subcmd_}"
         run_subcmd_or_command "${__args[@]}"
         unset -n ref_rect
     done
@@ -84,6 +85,7 @@ subcmd_abs() {
     let rect_{y,Y}+='rect_h<0?rect_h:0' || :
     rect_w=${rect_w#-}
     rect_h=${rect_h#-}
+    report_active_rect "${FUNCNAME[0]#subcmd_}"
     run_subcmd_or_command "$@"
 }
 
@@ -119,6 +121,7 @@ subcmd_pad() {
     let 'rect_x -= l, rect_y -= t, rect_X -= r, rect_Y -= b' || :
     rect_w=root_w-rect_x-rect_X
     rect_h=root_h-rect_y-rect_Y
+    report_active_rect "${FUNCNAME[0]#subcmd_}"
     run_subcmd_or_command "$@"
 }
 
@@ -184,6 +187,7 @@ subcmd_trim() {
     IFS=x+ read -r rect_{w,h} x y
     rect_x+=x rect_X=root_w-rect_x-rect_w
     rect_y+=y rect_Y=root_h-rect_y-rect_h
+    report_active_rect "${FUNCNAME[0]#subcmd_}"
     run_subcmd_or_command "$@"
 }
 

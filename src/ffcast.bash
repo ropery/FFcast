@@ -151,7 +151,12 @@ ensure_region_is_on_screen() {
     read rect_{x,y,X,Y}
     rect_w=root_w-rect_x-rect_X
     rect_h=root_h-rect_y-rect_Y
-    verbose 'made sure region is on screen'
+    report_active_rect "on screen"
+}
+
+report_active_rect() {
+    verbose 'active rect: %sx%s +%s+%s -%s-%s%s' \
+    "$rect_w" "$rect_h" "$rect_x" "$rect_y" "$rect_X" "$rect_Y" ${1:+" ← $1"}
 }
 
 verify_region_size() {
@@ -462,12 +467,12 @@ declare -n ref_rect
 ((intersect)) && mom=max || mom=min
 for ref_rect in "${rects[@]}"; do
     offsets=$(get_"$mom"_offsets "$ref_rect" "$offsets")
-    debug 'get_%s_offsets -> offsets="%s"' "$mom" "$offsets"
 done
 
 <<<"$offsets" read rect_{x,y,X,Y}
 rect_w=root_w-rect_x-rect_X
 rect_h=root_h-rect_y-rect_Y
+report_active_rect "rects.$mom"
 
 unset -n ref_rect
 unset -v mom offsets
