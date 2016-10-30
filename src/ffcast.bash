@@ -371,7 +371,7 @@ If no region is selected by the user, select fullscreen.
 Run \`${0##*/} help\` to list all sub-commands.
 For more details see ffcast(1).
 EOF
-  exit "${1:-0}"
+    exit "${1:-0}"
 }
 
 xwininfo_get_size -root | IFS=x read root_{w,h} || exit
@@ -421,11 +421,11 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
             ;;
         s)
             var="regions[${#regions[@]}]"
-            set_region_interactively "$var" || exit
+            set_region_interactively "$var"
             rects[i++]=$var; verbose 'rect: %s="%s"' "$var" "${!var}"
             ;;
       '#')
-            set_window_by_id "$OPTARG" windows __id || exit
+            set_window_by_id "$OPTARG" windows __id
             var="windows[$__id]"
             rects[i++]=$var; verbose 'rect: %s="%s"' "$var" "${!var}"
             ;;
