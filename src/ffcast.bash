@@ -374,6 +374,8 @@ EOF
     exit "${1:-0}"
 }
 
+[[ $1 != @(-h|--help) ]] || usage
+
 xwininfo_get_size -root | IFS=x read root_{w,h} || exit
 
 declare i=0 id= opt= var= __id
