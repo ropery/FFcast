@@ -53,6 +53,7 @@ Installation
 Package available for:
 https://aur.archlinux.org/packages/ffcast[Arch Linux],
 https://packages.gentoo.org/packages/media-video/ffcast[Gentoo],
+https://nixos.org/nixos/packages.html[NixOS],
 https://software.opensuse.org/package/ffcast[openSUSE].
 https://github.com/lolilolicon/FFcast/issues/21[And your distro, too!]
 
