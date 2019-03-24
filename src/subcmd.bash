@@ -101,7 +101,7 @@ subcmd_lag() {
 sub_commands['move']='move region by x,y pixels'
 sub_cmdfuncs['move']=subcmd_move
 subcmd_move() {
-    : 'usage: move <x>[,<y>]'
+    : 'usage: move <x>[,<y>] [sub-command]'
     (($#)) || { run_default_command; return; }
     local x y
     IFS=$' \t,' read -r x y <<< "$1" && shift

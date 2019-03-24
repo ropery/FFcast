@@ -226,9 +226,8 @@ xwininfo_get_window_by_ref() {
     local -x LC_ALL=C
     xwininfo "${@:3}" `((!frame || frame_support)) || printf -- -frame` |
     awk -v borders="$borders" -v frame="$((frame && frame_support))" '
-    BEGIN { OFS = " " }
-    /^xwininfo: Window id: 0x[[:xdigit:]]+ / { _id = $4 }
-    /^ *Border width: [[:digit:]]+$/ { _bw = $3 }
+    /^xwininfo: Window id: 0x[[:xdigit:]]+ / { _id = $4; next }
+    /^ *Border width: [[:digit:]]+$/ { _bw = $3; next }
     $1 == "Corners:" && NF == 5 && split($2, a, /\+/) == 3 {
         _ol = a[2]
         _ot = a[3]
