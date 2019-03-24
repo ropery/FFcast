@@ -243,6 +243,15 @@ are always substituted for external commands:
 
     ffcast -www ffmpeg -f x11grab -show_region 1 -s %s -i %D+%c gimp.mp4
 
+Keep selecting either regions (mouse drag) or windows (mouse click) until key
+press, then start recording the combined region of these selections:
+
+    ffcast -q $(while slop -q -n -f '-g %g ';do :;done) rec /tmp/rec-%s.mp4
+
+End the most recently started screencast session (hint: keyboard shortcuts):
+
+    pkill -fxn '(/\S+)*ffmpeg\s.*\sx11grab\s.*'
+
 Take a screenshot of two windows combined, excluding anything invisible on
 head 0:
 
