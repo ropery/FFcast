@@ -196,7 +196,7 @@ get_region_by_geospec() {
 # $1: variable to assign offsets to
 set_region_interactively() {
     msg '%s' "please select a region using mouse"
-    xrectsel $'%x %y %X %Y\n' | read -r && printf -v "$1" '%s' "$REPLY"
+    xrectsel $XRECTSEL_OPTS $'%x %y %X %Y\n' | read -r && printf -v "$1" '%s' "$REPLY"
 }
 
 # $1: a window ID
@@ -355,6 +355,7 @@ Options:
   -g <geospec>  specify a region in numeric geometry
   -x <n|list>   select the Xinerama head of ID n
   -s            select a rectangular region by mouse
+  -S            select a rectangular region by mouse with XServerGrab, freezes X
   -w            select a window by mouse click
   -# <n>        select a window by window ID
   -b            include window borders hereafter
@@ -380,7 +381,7 @@ xwininfo_get_size -root | IFS=x read root_{w,h} || exit
 declare i=0 id= opt= var= __id
 declare -a ids
 OPTIND=1
-while getopts ':#:bfg:hiqsvwx:' opt; do
+while getopts ':#:bfg:hiqsSvwx:' opt; do
     case $opt in
         h)  usage;;
         x)
@@ -423,6 +424,11 @@ while getopts ':#:bfg:hiqsvwx:' opt; do
         s)
             var="regions[${#regions[@]}]"
             set_region_interactively "$var"
+            rects[i++]=$var; verbose 'rect: %s="%s"' "$var" "${!var}"
+            ;;
+        S)
+            var="regions[${#regions[@]}]"
+            XRECTSEL_OPTS="--xgrab" set_region_interactively "$var"
             rects[i++]=$var; verbose 'rect: %s="%s"' "$var" "${!var}"
             ;;
       '#')

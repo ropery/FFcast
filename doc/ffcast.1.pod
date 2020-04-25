@@ -73,6 +73,10 @@ Be less verbose.
 
 Select a rectangular region by dragging the mouse.
 
+=item B<-S>
+
+Select a rectangular region by mouse with XServerGrab. This freezes X though reduces flickering on some WM.
+
 =item B<-v>
 
 Be more verbose. B<-v> turns on verbose messages. B<-vv> turns on debug.
