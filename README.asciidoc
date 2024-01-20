@@ -41,7 +41,7 @@ Requirements
 
 Bash 4.3+,
 FFmpeg (`png` `rec`),
-ImageMagick (`trim`),
+ImageMagick or GraphicsMagick (`trim`),
 xdpyinfo (`-x`),
 xprop (`-f`),
 https://github.com/lolilolicon/xrectsel.git[xrectsel] (`-s`),

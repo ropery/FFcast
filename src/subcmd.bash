@@ -183,8 +183,10 @@ subcmd_trim() {
         esac
     done
     shift $((OPTIND - 1))
+    local gm
+    command -v gm >/dev/null && gm=gm || gm=
     verbosity=0 subcmd_png - |
-    command convert - ${f:+-fuzz "$f"} -format '%@\n' info:- |
+    command $gm convert - ${f:+-fuzz "$f"} -format '%@\n' info:- |
     tee >(read -r; debug 'trim bounding box: %s' "$REPLY") |
     IFS=x+ read -r rect_{w,h} x y
     rect_x+=x rect_X=root_w-rect_x-rect_w
