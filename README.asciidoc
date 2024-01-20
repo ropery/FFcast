@@ -78,5 +78,5 @@ See link:doc/ffcast.1.pod[+ffcast(1)+].
 Perhaps start with link:doc/ffcast.1.pod#examples[EXAMPLES].
 
 ////
-vim:ts=2:sw=2:syntax=asciidoc:et:spell:spelllang=en_us:cc=80:
+vim:sw=2:syntax=asciidoc:et:spell:spelllang=en_us:cc=80:
 ////

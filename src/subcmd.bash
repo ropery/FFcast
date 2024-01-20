@@ -1,4 +1,4 @@
-#!/bin/bash
+# This file contains ffcast sub-command definitions.
 #
 # To register a sub-command 'foo', you MUST add this,
 #
@@ -193,4 +193,4 @@ subcmd_trim() {
     run_subcmd_or_command "$@"
 }
 
-# vim:ts=4:sw=4:et:cc=80:
+# vim:sw=4:et:cc=80:

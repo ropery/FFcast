@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # ffcast @VERSION@
 # Copyright (C) 2011-2016  lolilolicon <lolilolicon@gmail.com>
@@ -368,7 +368,7 @@ All options can be repeated, and are processed in order.
 If no region is selected by the user, select fullscreen.
 
 Run \`${0##*/} help\` to list all sub-commands.
-For more details see ffcast(1).
+For more details, see ffcast(1).
 EOF
     exit "${1:-0}"
 }
@@ -490,4 +490,4 @@ unset -f builtin command
 
 run_subcmd_or_command "$@"
 
-# vim:ts=4:sw=4:et:cc=80:
+# vim:sw=4:et:cc=80:

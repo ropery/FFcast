@@ -16,8 +16,8 @@ ffcast is a thin glue between interactive screen region selection and command
 line tools that accept numerical geometry parameters. It makes passing
 geometry parameters to such tools as easy as a mouse click.
 
-Typically, ffcast prompts the user to select a screen region and injects the
-geometry parameters thereof into the arguments of I<E<lt>commandE<gt>>, and
+Typically, ffcast prompts the user to select a screen region and injects its
+geometry parameters into the arguments of I<E<lt>commandE<gt>>, and
 then executes the resultant command line. This injection is done via format
 string substitution. See B<L<FORMAT STRINGS|/FORMAT STRINGS>>.
 
@@ -25,8 +25,8 @@ Multiple screen regions can be selected, and are by default combined by
 "union" into a single region. If no valid region is specified by the user,
 the root window is selected.
 
-ffcast maintains an internal list of predefined B<sub-commands>, which is
-looked up before all external commands. It's possible to add or override
+For convenience, ffcast recognizes certain predefined B<sub-commands>, which
+are looked up before all external commands. It's possible to add or override
 sub-commands via user configuration. See B<L<SUB-COMMANDS|/SUB-COMMANDS>>.
 
 If neither I<E<lt>sub-commandE<gt>> nor I<E<lt>commandE<gt>> is given, the
@@ -161,7 +161,7 @@ The type of the selection
 
 =back
 
-The format string B<%%> is always substituted for a literal C<%>, whenever
+The format string B<%%> is always substituted with a literal C<%>, whenever
 format string substitution is performed. Therefore, multiple levels of
 escaping may be required when sub-commands are chained.
 
